@@ -1,0 +1,15 @@
+/* Small local override file. Tailwind is loaded from its CDN in the Blade view. */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { max-width: 100%; overflow-x: hidden; }
+img, svg, video, canvas { max-width: 100%; }
+button, input, select, textarea { max-width: 100%; }
+
+@media (max-width: 640px) {
+    h1 { overflow-wrap: anywhere; }
+    table { width: 100%; }
+    .overflow-x-auto table { min-width: 36rem; }
+    .overflow-x-auto { max-width: 100%; }
+    .modal { padding: .75rem !important; }
+    .modal > div { max-height: calc(100dvh - 1.5rem); overflow-y: auto; }
+}
