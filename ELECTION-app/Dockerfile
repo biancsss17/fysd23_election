@@ -18,4 +18,4 @@ COPY docker/apache-vhost.conf /etc/apache2/sites-available/000-default.conf
 
 EXPOSE 80
 
-CMD ["sh", "-c", "touch database/database.sqlite && php artisan migrate --force && php artisan db:seed --force && php artisan config:cache && apache2-foreground"]
+CMD ["sh", "-c", "touch database/database.sqlite && chown -R www-data:www-data database storage bootstrap/cache && php artisan migrate --force && php artisan db:seed --force && chown -R www-data:www-data database storage bootstrap/cache && php artisan config:cache && apache2-foreground"]

@@ -84,6 +84,21 @@ class ElectionScenarioTest extends TestCase
         $this->assertDatabaseCount('registered_voters', 6);
     }
 
+    public function test_admin_can_add_a_voter_without_a_server_error(): void
+    {
+        $this->withSession($this->adminSession())
+            ->post(route('admin.voter-management.store'), [
+                'email' => 'new-voter@example.test',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('voter_success');
+
+        $this->assertDatabaseHas('registered_voters', [
+            'email' => 'new-voter@example.test',
+            'is_active' => true,
+        ]);
+    }
+
     public function test_single_and_multi_seat_configuration_stays_synchronized(): void
     {
         $this->withSession($this->adminSession())
