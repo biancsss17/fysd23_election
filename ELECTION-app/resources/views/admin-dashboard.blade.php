@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { theme: { extend: { colors: { surface: '#f9f9ff', 'surface-container': '#e7eeff', 'surface-container-low': '#f0f3ff', 'surface-container-high': '#dee8ff', 'surface-container-highest': '#d8e3fb', 'primary-container': '#0e1c2f', secondary: '#115cb9', 'tertiary-fixed': '#ffdf98', 'tertiary-fixed-dim': '#eec14b' }, fontFamily: { display: ['Outfit'], sans: ['Inter'] } } } };</script>
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
 </head>
 <body class="min-h-screen bg-surface font-sans text-[#111c2d] antialiased">
     @include('admin.partials.header')

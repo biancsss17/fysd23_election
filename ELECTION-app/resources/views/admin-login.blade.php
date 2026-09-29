@@ -16,7 +16,7 @@
             fontFamily: { display: ['Outfit'], sans: ['Inter'] }
         } } };
     </script>
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
 </head>
 <body class="flex min-h-screen items-center justify-center bg-[#f9f9ff] font-sans text-[#111c2d] antialiased">
     <main class="flex min-h-screen w-full items-center justify-center bg-[#f9f9ff] px-4 py-8 sm:px-6">

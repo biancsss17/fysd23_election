@@ -23,7 +23,7 @@
             }}
         };
     </script>
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
     <style>
         html:has(body.home-page),
         body.home-page { overflow: hidden; }
