@@ -520,11 +520,25 @@ class AdminAuthController extends Controller
             'is_active' => ['required', 'boolean'],
         ]);
 
-        $voter->update([
-            'is_active' => (bool) $validated['is_active'],
-        ]);
+        $isActive = (bool) $validated['is_active'];
+        $email = strtolower(trim($voter->email));
+        $revokedVotes = 0;
 
-        return back()->with('voter_success', 'Voter eligibility updated successfully.');
+        DB::transaction(function () use ($email, $isActive, $voter, &$revokedVotes): void {
+            $voter->update(['is_active' => $isActive]);
+
+            if (! $isActive) {
+                $revokedVotes = ElectionVote::query()
+                    ->whereRaw('LOWER(voter_email) = ?', [$email])
+                    ->delete();
+            }
+        });
+
+        $message = $revokedVotes > 0
+            ? "Voter marked ineligible and {$revokedVotes} vote record(s) revoked."
+            : 'Voter eligibility updated successfully.';
+
+        return back()->with('voter_success', $message);
     }
 
     public function importVoters(Request $request): RedirectResponse

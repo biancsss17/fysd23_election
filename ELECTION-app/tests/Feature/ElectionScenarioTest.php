@@ -102,6 +102,31 @@ class ElectionScenarioTest extends TestCase
         ]);
     }
 
+    public function test_marking_a_voter_ineligible_revokes_their_recorded_votes(): void
+    {
+        $position = $this->position('President');
+        ElectionVote::create([
+            'position_id' => $position->id,
+            'voter_email' => 'scenario-voter-1@example.test',
+            'is_abstain' => true,
+        ]);
+
+        $this->withSession($this->adminSession())
+            ->patch(route('admin.voter-management.eligibility', RegisteredVoter::where('email', 'scenario-voter-1@example.test')->firstOrFail()), [
+                'is_active' => 0,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('voter_success', 'Voter marked ineligible and 1 vote record(s) revoked.');
+
+        $this->assertDatabaseHas('registered_voters', [
+            'email' => 'scenario-voter-1@example.test',
+            'is_active' => false,
+        ]);
+        $this->assertDatabaseMissing('election_votes', [
+            'voter_email' => 'scenario-voter-1@example.test',
+        ]);
+    }
+
     public function test_seat_count_and_maximum_selections_are_independent(): void
     {
         $this->withSession($this->adminSession())
