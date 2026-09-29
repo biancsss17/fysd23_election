@@ -22,7 +22,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Render terminates TLS before forwarding requests to Apache/PHP. Force
         // generated asset, form, and route URLs to remain HTTPS in production.
-        if ($this->app->environment('production')) {
+        if ($this->app->environment('production')
+            || request()->header('x-forwarded-proto') === 'https'
+            || request()->header('host') === 'fysd23-election.onrender.com') {
             URL::forceScheme('https');
         }
     }
