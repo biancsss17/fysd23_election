@@ -36,9 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.querySelectorAll('a[href$="/admin/audit-log"]').forEach((link) => link.remove());
-    document.querySelectorAll('a[href$="/admin/candidates-nominations"]').forEach((link) => link.remove());
-
     const adminNav = document.querySelector('aside nav');
     if (adminNav) {
         const navigationItems = [
@@ -162,7 +159,10 @@ window.refreshLivePage = window.refreshLivePage || (() => {
             const nextDocument = new DOMParser().parseFromString(documentText, 'text/html');
             const currentMain = document.querySelector('main');
             const nextMain = nextDocument.querySelector('main');
-            if (currentMain && nextMain) currentMain.replaceWith(nextMain);
+            if (currentMain && nextMain) {
+                currentMain.replaceWith(nextMain);
+                document.dispatchEvent(new CustomEvent('admin-main-refreshed'));
+            }
             const currentResultsDocument = document.querySelector('[data-live-results-document]');
             const nextResultsDocument = nextDocument.querySelector('[data-live-results-document]');
             if (currentResultsDocument && nextResultsDocument) currentResultsDocument.replaceWith(nextResultsDocument);

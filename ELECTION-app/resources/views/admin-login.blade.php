@@ -25,7 +25,7 @@
             <div class="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-amber-300/20 blur-3xl"></div>
             <div class="relative z-10 flex w-full flex-col gap-6 sm:gap-8">
                 <header class="flex items-center justify-between px-1">
-                    <a href="{{ route('home') }}" class="flex items-center gap-2"><img src="{{ asset('images/uecfi-logo.png') }}" alt="Official Seal" class="h-10 w-10 shrink-0 rounded-full object-contain shadow-md"><span class="flex flex-col"><span class="text-[11px] font-bold uppercase tracking-widest text-secondary">District 23 FYS</span><span class="text-xs text-[#44474c]">Triennial Election Commission</span></span></a>
+                    <a href="{{ route('home') }}" class="flex items-center gap-2"><img src="{{ asset('images/uecfi-logo.png') }}" alt="Official Seal" class="h-10 w-10 shrink-0 rounded-full object-contain shadow-md"><span class="text-[11px] font-bold uppercase tracking-widest text-secondary">District 23 FYS</span></a>
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-surface-container-high px-3 py-1 text-[10px] font-semibold tracking-wider text-[#44474c]"><span class="h-2 w-2 animate-pulse rounded-full bg-secondary"></span>Official session</span>
                 </header>
 

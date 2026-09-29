@@ -13,12 +13,15 @@ use Illuminate\View\View;
 
 class HomeController extends Controller
 {
+    private const BALLOT_WINDOW_SECONDS = 60;
+
     /**
      * Display the application homepage.
      */
     public function index(): View
     {
-        $position = ElectionPosition::query()->where('is_completed', false)->orderBy('id')->first();
+        $position = ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
+            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
         $allPositionsComplete = ElectionPosition::query()->exists()
             && ! ElectionPosition::query()->where('is_completed', false)->exists();
         $submissions = CandidateSubmission::query()
@@ -36,7 +39,7 @@ class HomeController extends Controller
     public function finalDocument(): View
     {
         $positions = ElectionPosition::query()
-            ->orderBy('id')
+            ->orderBy('sort_order')->orderBy('id')
             ->get()
             ->map(function (ElectionPosition $position): array {
                 $candidates = CandidateSubmission::query()
@@ -49,7 +52,7 @@ class HomeController extends Controller
 
                 return [
                     'position' => $position,
-                    'winners' => $candidates->filter(fn (CandidateSubmission $candidate): bool => $candidate->votes_count > 0)->take($position->seats)->values(),
+                    'winners' => $this->selectWinners($candidates, $position->seats),
                 ];
             });
 
@@ -58,7 +61,14 @@ class HomeController extends Controller
 
     public function voterAccess(): View
     {
-        return view('voter-access');
+        $position = ElectionPosition::query()
+            ->where('is_completed', false)
+            ->where('is_closed', false)
+            ->orderBy('sort_order')->orderBy('id')
+            ->first()
+            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
+
+        return view('voter-access', compact('position'));
     }
 
     public function verifyVoterAccess(Request $request): RedirectResponse
@@ -68,6 +78,17 @@ class HomeController extends Controller
         ]);
 
         $email = strtolower(trim($validated['email']));
+        $claimedEmails = collect(session('voter_access_emails', []))
+            ->map(fn ($claimedEmail): string => strtolower(trim((string) $claimedEmail)))
+            ->filter()
+            ->values();
+        if ($claimedEmails->contains($email)) {
+            return back()
+                ->withInput()
+                ->with('duplicate_voter_access_email', $email)
+                ->with('access_error', 'This voter email is already active in another ballot tab. Continue in the existing tab.');
+        }
+
         $isRegistered = RegisteredVoter::query()
             ->where('email', $email)
             ->where('is_active', true)
@@ -79,7 +100,27 @@ class HomeController extends Controller
                 ->with('access_error', 'This email is not registered for the District 23 FYS election.');
         }
 
-        session(['verified_email' => $email]);
+        if (ElectionVote::query()->where('voter_email', $email)->exists()) {
+            return back()
+                ->withInput()
+                ->with('access_error', 'This email has already submitted a vote and cannot enter another ballot.');
+        }
+
+        $position = ElectionPosition::query()
+            ->where('is_completed', false)
+            ->where('is_closed', false)
+            ->orderBy('sort_order')->orderBy('id')
+            ->first();
+        if (! $position || ! $position->is_unlocked) {
+            return back()->withInput()->with('access_error', 'Voting has not started yet. Please wait for the administrator to unlock the ballot.');
+        }
+
+        session([
+            'voter_access_emails' => $claimedEmails->push($email)->unique()->values()->all(),
+            'voter_access_email' => $email,
+            'verified_email' => $email,
+        ]);
+        session()->forget('duplicate_voter_access_email');
 
         return redirect()->route('ballot');
     }
@@ -88,23 +129,47 @@ class HomeController extends Controller
     {
         $position = $positionId
             ? ElectionPosition::query()->find($positionId)
-            : ElectionPosition::query()->where('is_completed', false)->orderBy('id')->first();
-        $position ??= ElectionPosition::query()->where('is_completed', false)->orderBy('id')->first()
-            ?? ElectionPosition::query()->orderBy('id')->first();
+            : ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first();
+        $position ??= ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
+            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first()
+            ?? ElectionPosition::query()->orderBy('sort_order')->orderBy('id')->first();
         if ($position) {
             session(['current_position_id' => $position->id]);
+            if ($position->is_unlocked && $position->unlocked_at
+                && $position->unlocked_at->diffInSeconds(now()) >= self::BALLOT_WINDOW_SECONDS) {
+                $this->recordAutomaticAbstentions($position);
+                $position->update(['is_unlocked' => false, 'is_closed' => true, 'unlocked_at' => null]);
+                $position->refresh();
+            }
         }
 
+        $remainingSeconds = $position?->is_unlocked && $position->unlocked_at
+            ? min(self::BALLOT_WINDOW_SECONDS, max(0, (int) floor(self::BALLOT_WINDOW_SECONDS - $position->unlocked_at->diffInSeconds(now()))))
+            : 0;
         return view('ballot', [
             'position' => $position,
             'candidateSubmissions' => CandidateSubmission::query()->where('status', '!=', 'Rejected')->where('position_id', $position?->id)->orderBy('id')->get(),
+            'remainingSeconds' => $remainingSeconds,
         ]);
     }
 
     public function publicElectionData(): JsonResponse
     {
-        $positions = ElectionPosition::query()->orderBy('id')->get(['id', 'name', 'seats', 'rule', 'allow_abstain', 'max_selections', 'is_completed', 'is_unlocked', 'is_closed', 'updated_at']);
-        $activePosition = ElectionPosition::query()->where('is_completed', false)->orderBy('id')->first();
+        $activePosition = ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
+            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
+        if ($activePosition?->is_unlocked && $activePosition->unlocked_at
+            && $activePosition->unlocked_at->diffInSeconds(now()) >= self::BALLOT_WINDOW_SECONDS) {
+            $this->recordAutomaticAbstentions($activePosition);
+            $activePosition->update(['is_unlocked' => false, 'is_closed' => true, 'unlocked_at' => null]);
+        }
+        $positions = ElectionPosition::query()->orderBy('sort_order')->orderBy('id')->get(['id', 'name', 'sort_order', 'seats', 'rule', 'allow_abstain', 'max_selections', 'is_completed', 'is_unlocked', 'is_closed', 'candidacy_open', 'nomination_open', 'unlocked_at', 'updated_at']);
+        $remainingSeconds = $activePosition?->is_unlocked && $activePosition->unlocked_at
+            ? min(self::BALLOT_WINDOW_SECONDS, max(0, (int) floor(self::BALLOT_WINDOW_SECONDS - $activePosition->unlocked_at->diffInSeconds(now()))))
+            : 0;
+        $positions->each(function (ElectionPosition $position) use ($activePosition, $remainingSeconds): void {
+            $position->setAttribute('remaining_seconds', $activePosition?->id === $position->id ? $remainingSeconds : 0);
+        });
+        $activePosition?->setAttribute('remaining_seconds', $remainingSeconds);
         $submissions = CandidateSubmission::query()->where('status', '!=', 'Rejected')->where('position_id', $activePosition?->id)->orderBy('id')->get(['id', 'candidate_name', 'submitted_by_email', 'submission_type', 'status', 'position_id', 'updated_at']);
 
         return response()->json([
@@ -123,6 +188,11 @@ class HomeController extends Controller
     {
         $choices = collect(session('pending_vote_choices', []));
         $verifiedEmail = session('verified_email');
+        $position = ElectionPosition::query()->find(session('current_position_id'));
+        $remainingSeconds = $position?->is_unlocked && $position->unlocked_at
+            ? min(self::BALLOT_WINDOW_SECONDS, max(0, (int) floor(self::BALLOT_WINDOW_SECONDS - $position->unlocked_at->diffInSeconds(now()))))
+            : 0;
+        $votingOpen = (bool) ($position?->is_unlocked && ! $position->is_closed);
         $isVerified = is_string($verifiedEmail) && RegisteredVoter::query()
             ->where('email', $verifiedEmail)
             ->where('is_active', true)
@@ -133,9 +203,12 @@ class HomeController extends Controller
         $candidateNames = CandidateSubmission::query()->whereIn('id', $candidateIds)->pluck('candidate_name')->values();
 
         return view('review-vote', [
+            'position' => $position,
             'pendingChoices' => $choices->values(),
             'reviewChoices' => $candidateNames->isNotEmpty() ? $candidateNames : $choices->filter(fn (string $choice): bool => $choice !== 'abstain')->values(),
             'isVerified' => $isVerified,
+            'votingOpen' => $votingOpen,
+            'remainingSeconds' => $remainingSeconds,
         ]);
     }
 
@@ -188,6 +261,25 @@ class HomeController extends Controller
                 ->with('email_error', 'This email is not registered for the District 23 FYS election.');
         }
 
+        $position = ElectionPosition::query()->find(session('current_position_id'))
+            ?? ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
+            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
+        if ($position?->is_unlocked && $position->unlocked_at
+            && $position->unlocked_at->diffInSeconds(now()) >= self::BALLOT_WINDOW_SECONDS) {
+            $this->recordAutomaticAbstentions($position);
+            $position->update(['is_unlocked' => false, 'is_closed' => true, 'unlocked_at' => null]);
+
+            return back()->with('email_error', 'The one-minute voting window has closed.');
+        }
+        if ($position && ElectionVote::query()
+            ->where('position_id', $position->id)
+            ->where('voter_email', $email)
+            ->exists()) {
+            session()->forget('verified_email');
+
+            return back()->with('email_error', 'You have already voted for this position.');
+        }
+
         session(['verified_email' => $email]);
         session()->keep('pending_vote_choices');
 
@@ -196,8 +288,10 @@ class HomeController extends Controller
 
     public function submitCandidacy(Request $request): RedirectResponse
     {
-        if (! ElectionPosition::query()->where('is_completed', false)->exists()) {
-            return redirect()->route('home')->with('submission_error', 'No election position is currently available.');
+        $positionId = $this->activePositionId();
+        $position = $positionId ? ElectionPosition::query()->find($positionId) : null;
+        if (! $position || ! $position->candidacy_open) {
+            return redirect()->route('home')->with('submission_error', 'Candidacy is currently closed by the administrator.');
         }
 
         $validated = $request->validate([
@@ -217,23 +311,33 @@ class HomeController extends Controller
                 ->with('candidacy_error', 'You are not eligible to vote. Please contact an election administrator.');
         }
 
+        if (CandidateSubmission::query()
+            ->where('submitted_by_email', $email)
+            ->where('submission_type', 'Self-Declaration')
+            ->where('position_id', $positionId)
+            ->exists()) {
+            return redirect()->route('home')->with('candidacy_error', 'You have already submitted candidacy for this position.');
+        }
+
         CandidateSubmission::query()->create([
             'candidate_name' => trim($validated['full_name']),
             'submitted_by_email' => $email,
             'submission_type' => 'Self-Declaration',
             'status' => 'Pending',
-            'position_id' => $this->activePositionId(),
+            'position_id' => $positionId,
         ]);
 
         $this->lockActivePosition();
 
-        return redirect()->route('ballot')->with('submission_success', 'Your candidacy has been recorded successfully.');
+        return redirect()->route('home')->with('submission_success', 'Your candidacy has been recorded successfully.');
     }
 
     public function submitNomination(Request $request): RedirectResponse
     {
-        if (! ElectionPosition::query()->where('is_completed', false)->exists()) {
-            return redirect()->route('home')->with('submission_error', 'No election position is currently available.');
+        $positionId = $this->activePositionId();
+        $position = $positionId ? ElectionPosition::query()->find($positionId) : null;
+        if (! $position || ! $position->nomination_open) {
+            return redirect()->route('home')->with('submission_error', 'Nominations are currently closed by the administrator.');
         }
 
         $validated = $request->validate([
@@ -253,17 +357,25 @@ class HomeController extends Controller
                 ->with('nomination_error', 'You are not eligible to vote. Please contact an election administrator.');
         }
 
+        if (CandidateSubmission::query()
+            ->where('submitted_by_email', $email)
+            ->where('submission_type', 'Peer Nomination')
+            ->where('position_id', $positionId)
+            ->exists()) {
+            return redirect()->route('home')->with('nomination_error', 'You have already submitted a nomination for this position.');
+        }
+
         CandidateSubmission::query()->create([
             'candidate_name' => trim($validated['nominee_name']),
             'submitted_by_email' => $email,
             'submission_type' => 'Peer Nomination',
             'status' => 'Pending',
-            'position_id' => $this->activePositionId(),
+            'position_id' => $positionId,
         ]);
 
         $this->lockActivePosition();
 
-        return redirect()->route('ballot')->with('submission_success', 'Your nomination has been recorded successfully.');
+        return redirect()->route('home')->with('submission_success', 'Your nomination has been recorded successfully.');
     }
 
     public function submitVote(Request $request): RedirectResponse
@@ -275,7 +387,8 @@ class HomeController extends Controller
         ]);
 
         $position = ElectionPosition::query()->find(session('current_position_id'))
-            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('id')->first();
+            ?? ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
+            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
 
         if (! $position || ! $position->is_unlocked || $position->is_closed) {
             if ($position?->is_closed) {
@@ -308,28 +421,37 @@ class HomeController extends Controller
 
     public function voteCountdown(): View
     {
-        return view('vote-countdown');
+        $position = ElectionPosition::query()->find(session('current_position_id'))
+            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
+
+        $remainingSeconds = $position?->unlocked_at
+            ? min(self::BALLOT_WINDOW_SECONDS, max(0, (int) floor(self::BALLOT_WINDOW_SECONDS - $position->unlocked_at->diffInSeconds(now()))))
+            : 0;
+
+        return view('vote-countdown', compact('remainingSeconds'));
     }
 
     public function autoCloseBallot(): JsonResponse
     {
-        $position = ElectionPosition::query()->find(session('current_position_id'))
-            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('id')->first();
-
-        if ($position && $position->is_unlocked && ! $position->is_closed) {
+        $position = ElectionPosition::query()->find(session('current_position_id'));
+        if ($position?->is_unlocked && $position->unlocked_at
+            && $position->unlocked_at->diffInSeconds(now()) >= self::BALLOT_WINDOW_SECONDS) {
             $this->recordAutomaticAbstentions($position);
-            $position->update(['is_closed' => true, 'is_unlocked' => false]);
+            $position->update(['is_unlocked' => false, 'is_closed' => true, 'unlocked_at' => null]);
         }
 
-        return response()->json(['closed' => (bool) $position]);
+        return response()->json(['closed' => (bool) $position?->is_closed]);
     }
 
     public function results(): View
     {
-        $positions = ElectionPosition::query()->orderBy('id')->get();
+        $positions = ElectionPosition::query()->orderBy('sort_order')->orderBy('id')->get();
         $currentPositionId = session('current_position_id');
         $currentIndex = $positions->search(fn (ElectionPosition $position): bool => $position->id === (int) $currentPositionId);
-        $currentPosition = $currentIndex === false ? $positions->first() : $positions->get($currentIndex);
+        $allPositionsComplete = $positions->isNotEmpty() && $positions->every(fn (ElectionPosition $position): bool => $position->is_completed);
+        $currentPosition = $allPositionsComplete
+            ? $positions->last()
+            : ($currentIndex !== false ? $positions->get($currentIndex) : $positions->first());
         if ($currentPosition && ! $currentPosition->is_completed) {
             $this->recordAutomaticAbstentions($currentPosition);
             $currentPosition->update(['is_completed' => true]);
@@ -346,7 +468,7 @@ class HomeController extends Controller
             ? ElectionVote::query()->where('position_id', $currentPosition->id)->where('is_abstain', true)->distinct('voter_email')->count('voter_email')
             : 0;
         $winners = $currentPosition
-            ? $results->filter(fn (CandidateSubmission $candidate): bool => $candidate->votes_count > 0)->take($currentPosition->seats)->values()
+            ? $this->selectWinners($results, $currentPosition->seats)
             : collect();
 
         return view('results', [
@@ -370,6 +492,10 @@ class HomeController extends Controller
         ]);
 
         $position = ElectionPosition::query()->find(session('current_position_id'));
+        if ($position?->is_unlocked && $position->unlocked_at
+            && $position->unlocked_at->diffInSeconds(now()) >= self::BALLOT_WINDOW_SECONDS) {
+            $position->update(['is_unlocked' => false, 'is_closed' => true, 'unlocked_at' => null]);
+        }
         if ($position && (! $position->is_unlocked || $position->is_closed)) {
             return redirect()->route('ballot')->with('ballot_locked', $position->is_closed
                 ? 'Voting is closed. This ballot can no longer be submitted.'
@@ -390,6 +516,15 @@ class HomeController extends Controller
             session()->forget('verified_email');
 
             return back()->with('email_error', 'Verify your registered email before submitting your vote.');
+        }
+
+        if ($position && ElectionVote::query()
+            ->where('position_id', $position->id)
+            ->where('voter_email', $email)
+            ->exists()) {
+            session()->forget(['verified_email', 'pending_vote_choices']);
+
+            return redirect()->route('home')->with('submission_error', 'You have already voted for this position.');
         }
 
         $choices = session('pending_vote_choices', []);
@@ -461,6 +596,25 @@ class HomeController extends Controller
         );
     }
 
+    private function selectWinners($candidates, int $seats)
+    {
+        $positiveCandidates = $candidates->filter(
+            fn (CandidateSubmission $candidate): bool => $candidate->votes_count > 0
+        )->values();
+
+        if ($positiveCandidates->isEmpty()) {
+            return $positiveCandidates;
+        }
+
+        // A tie at the final winning place elects every tied candidate.
+        $cutoffCandidate = $positiveCandidates->get(max(0, $seats - 1));
+        $cutoffVotes = $cutoffCandidate?->votes_count;
+
+        return $positiveCandidates
+            ->filter(fn (CandidateSubmission $candidate): bool => $candidate->votes_count >= $cutoffVotes)
+            ->values();
+    }
+
     private function recordAutomaticAbstentions(ElectionPosition $position): void
     {
         $candidateIds = CandidateSubmission::query()->where('position_id', $position->id)->pluck('id');
@@ -486,7 +640,8 @@ class HomeController extends Controller
 
     private function activePositionId(): ?int
     {
-        return ElectionPosition::query()->where('is_completed', false)->orderBy('id')->value('id');
+        return ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->value('id')
+            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->value('id');
     }
 
     private function timelineStep(?ElectionPosition $position, $submissions): int
@@ -508,7 +663,7 @@ class HomeController extends Controller
 
     private function lockActivePosition(): void
     {
-        $position = ElectionPosition::query()->where('is_completed', false)->orderBy('id')->first();
+        $position = ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first();
 
         $position?->update(['is_unlocked' => false, 'is_closed' => false]);
     }

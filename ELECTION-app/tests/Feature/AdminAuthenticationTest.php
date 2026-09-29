@@ -60,7 +60,7 @@ class AdminAuthenticationTest extends TestCase
         $position = ElectionPosition::query()->firstOrFail();
         $this->assertSame(2, $position->seats);
         $this->assertSame('multi', $position->rule);
-        $this->assertSame(2, $position->max_selections);
+        $this->assertSame(5, $position->max_selections);
     }
 
     public function test_next_position_name_uses_the_first_missing_official_position(): void

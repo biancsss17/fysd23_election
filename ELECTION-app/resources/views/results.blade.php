@@ -33,12 +33,36 @@
                 @endforelse
                 <div class="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-3"><span class="font-semibold">ABSTAIN</span><span class="rounded-full bg-[#e7eeff] px-3 py-1 text-sm font-bold text-[#115cb9]">{{ $abstentions }}</span></div>
             </div>
-            @if ($nextPosition)
-                <a href="{{ route('ballot', ['positionId' => $nextPosition->id]) }}" class="mt-8 flex h-12 items-center justify-center rounded-xl bg-[#0b192c] font-bold text-white">Continue to {{ $nextPosition->name }}</a>
-            @else
-                <a href="{{ route('home') }}" class="mt-8 flex h-12 items-center justify-center rounded-xl bg-[#0b192c] font-bold text-white">Return to election home</a>
-            @endif
+            <a href="{{ route('home') }}" class="mt-8 flex h-12 items-center justify-center rounded-xl bg-[#0b192c] font-bold text-white">Return to election overview</a>
         </section>
     </main>
+    <script>
+        const currentResultsPositionId = @json($currentPosition?->id);
+        const reopenedBallotUrl = @json($currentPosition ? route('ballot', $currentPosition) : route('ballot'));
+        const electionDataUrl = @json(route('election.data'));
+
+        const redirectWhenBallotReopens = async () => {
+            try {
+                const response = await fetch(electionDataUrl, {
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store',
+                });
+                if (!response.ok) return;
+                const data = await response.json();
+                const activePosition = data.active_position;
+                if (activePosition
+                    && Number(activePosition.id) === Number(currentResultsPositionId)
+                    && Boolean(activePosition.is_unlocked)
+                    && !Boolean(activePosition.is_closed)) {
+                    window.location.replace(reopenedBallotUrl);
+                }
+            } catch {
+                // A temporary polling failure should leave the results page usable.
+            }
+        };
+
+        redirectWhenBallotReopens();
+        window.setInterval(redirectWhenBallotReopens, 1000);
+    </script>
 </body>
 </html>

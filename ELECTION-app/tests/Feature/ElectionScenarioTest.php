@@ -10,6 +10,7 @@ use App\Models\ElectionVote;
 use App\Models\RegisteredVoter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class ElectionScenarioTest extends TestCase
@@ -53,6 +54,8 @@ class ElectionScenarioTest extends TestCase
             'is_completed' => false,
             'is_unlocked' => false,
             'is_closed' => false,
+            'candidacy_open' => true,
+            'nomination_open' => true,
         ]);
     }
 
@@ -99,28 +102,26 @@ class ElectionScenarioTest extends TestCase
         ]);
     }
 
-    public function test_single_and_multi_seat_configuration_stays_synchronized(): void
+    public function test_seat_count_and_maximum_selections_are_independent(): void
     {
         $this->withSession($this->adminSession())
             ->post(route('admin.position-management.store'), [
                 'position_name' => 'President',
                 'seats' => 3,
-                'rule' => 'single',
                 'allow_abstain' => 1,
                 'max_selections' => 5,
             ])
             ->assertRedirect(route('admin.position-management'));
 
         $single = ElectionPosition::query()->firstOrFail();
-        $this->assertSame(1, $single->seats);
-        $this->assertSame('single', $single->rule);
-        $this->assertSame(1, $single->max_selections);
+        $this->assertSame(3, $single->seats);
+        $this->assertSame('multi', $single->rule);
+        $this->assertSame(5, $single->max_selections);
 
         $this->withSession($this->adminSession())
             ->post(route('admin.position-management.store'), [
                 'position_name' => 'Vice President',
                 'seats' => 2,
-                'rule' => 'multi',
                 'allow_abstain' => 1,
                 'max_selections' => 5,
             ]);
@@ -128,31 +129,61 @@ class ElectionScenarioTest extends TestCase
         $multi = ElectionPosition::query()->where('name', 'Vice President')->firstOrFail();
         $this->assertSame(2, $multi->seats);
         $this->assertSame('multi', $multi->rule);
-        $this->assertSame(2, $multi->max_selections);
+        $this->assertSame(5, $multi->max_selections);
     }
 
-    public function test_candidacy_nomination_approval_and_rejection_work(): void
+    public function test_admin_can_switch_unfinished_position_order(): void
+    {
+        $president = $this->position('President');
+        $vicePresident = $this->position('Vice President');
+
+        $this->withSession($this->adminSession())
+            ->patch(route('admin.position-management.reorder', $vicePresident), ['direction' => 'up'])
+            ->assertRedirect();
+
+        $orderedNames = ElectionPosition::query()
+            ->orderBy('sort_order')->orderBy('id')->pluck('name')->all();
+        $this->assertSame(['Vice President', 'President'], $orderedNames);
+
+        $president->update(['is_completed' => true]);
+        $this->withSession($this->adminSession())
+            ->patch(route('admin.position-management.reorder', $vicePresident), ['target_position_id' => $president->id])
+            ->assertRedirect();
+
+        $this->assertSame(['President', 'Vice President'], ElectionPosition::query()
+            ->orderBy('sort_order')->orderBy('id')->pluck('name')->all());
+    }
+
+    public function test_candidacy_and_nomination_submissions_work_without_admin_review_page(): void
     {
         $position = $this->position('President');
 
         $this->post(route('candidacy.submit'), [
             'full_name' => 'Scenario Candidate One',
             'email' => 'scenario-voter-1@example.test',
-        ])->assertRedirect(route('ballot'));
+        ])->assertRedirect(route('home'));
 
         $nomination = $this->post(route('nomination.submit'), [
             'nominee_name' => 'Scenario Candidate Two',
             'email' => 'scenario-voter-2@example.test',
-        ])->assertRedirect(route('ballot'));
+        ])->assertRedirect(route('home'));
 
         $candidate = CandidateSubmission::query()->where('candidate_name', 'Scenario Candidate One')->firstOrFail();
-        $this->withSession($this->adminSession())
-            ->patch(route('admin.candidates-nominations.status', $candidate), ['status' => 'Approved'])
-            ->assertRedirect(route('admin.candidates-nominations'));
-
         $this->assertDatabaseHas('candidate_submissions', ['candidate_name' => 'Scenario Candidate Two', 'status' => 'Pending']);
         $this->assertSame($position->id, $candidate->fresh()->position_id);
         $this->assertNotNull($nomination);
+
+        $this->post(route('candidacy.submit'), [
+            'full_name' => 'Duplicate Candidate',
+            'email' => 'scenario-voter-1@example.test',
+        ])->assertRedirect(route('home'))
+            ->assertSessionHas('candidacy_error');
+
+        $this->post(route('nomination.submit'), [
+            'nominee_name' => 'Duplicate Nominee',
+            'email' => 'scenario-voter-2@example.test',
+        ])->assertRedirect(route('home'))
+            ->assertSessionHas('nomination_error');
     }
 
     public function test_unlock_lock_and_manual_close_control_the_current_position(): void
@@ -176,6 +207,45 @@ class ElectionScenarioTest extends TestCase
             ->assertRedirect();
         $this->assertTrue($position->fresh()->is_closed);
         $this->assertSame(6, ElectionVote::query()->where('position_id', $position->id)->where('is_abstain', true)->count());
+
+        $this->withSession($this->adminSession())
+            ->patch(route('admin.position-management.reopen', $position))
+            ->assertRedirect();
+        $this->assertFalse($position->fresh()->is_closed);
+        $this->assertTrue($position->fresh()->is_unlocked);
+    }
+
+    public function test_admin_can_start_candidacy_and_nomination_independently(): void
+    {
+        $position = $this->position('President');
+        $position->update(['candidacy_open' => false, 'nomination_open' => false]);
+
+        $this->withSession($this->adminSession())
+            ->patch(route('admin.position-management.candidacy', $position))
+            ->assertRedirect()
+            ->assertSessionHas('position_success', 'President candidacy is now open.');
+        $this->assertTrue($position->fresh()->candidacy_open);
+        $this->assertFalse($position->fresh()->nomination_open);
+
+        $this->withSession($this->adminSession())
+            ->patch(route('admin.position-management.nomination', $position))
+            ->assertRedirect()
+            ->assertSessionHas('position_success', 'President nominations are now open.');
+        $this->assertTrue($position->fresh()->nomination_open);
+    }
+
+    public function test_closed_unfinished_position_does_not_block_locking_the_next_position(): void
+    {
+        $closed = $this->position('Treasurer');
+        $closed->update(['is_closed' => true]);
+        $next = $this->position('Auditor');
+
+        $this->withSession($this->adminSession())
+            ->patch(route('admin.position-management.lock', $next))
+            ->assertRedirect()
+            ->assertSessionHas('position_success', 'Auditor ballot locked successfully.');
+
+        $this->assertFalse($next->fresh()->is_unlocked);
     }
 
     public function test_voter_can_verify_and_submit_a_single_seat_vote(): void
@@ -220,9 +290,53 @@ class ElectionScenarioTest extends TestCase
         $session = $this->withSession(['current_position_id' => $position->id, 'verified_email' => 'scenario-voter-1@example.test']);
 
         $session->post(route('review-vote.submit'), ['choices' => ['abstain']])->assertRedirect(route('vote-countdown'));
-        $this->withSession(['current_position_id' => $position->id])->post(route('ballot.auto-close'))->assertOk();
+        $this->assertTrue($position->fresh()->is_unlocked);
+        $this->withSession($this->adminSession())
+            ->patch(route('admin.position-management.close', $position))
+            ->assertRedirect();
 
         $this->assertSame(6, ElectionVote::query()->where('position_id', $position->id)->where('is_abstain', true)->distinct('voter_email')->count('voter_email'));
+    }
+
+    public function test_thirty_second_timeout_closes_ballot_and_opens_results(): void
+    {
+        $position = $this->position('President');
+        $this->withSession($this->adminSession())
+            ->patch(route('admin.position-management.unlock', $position))
+            ->assertRedirect();
+
+        $position->update(['unlocked_at' => Carbon::now()->subSeconds(60)]);
+
+        $this->withSession(['current_position_id' => $position->id])
+            ->post(route('vote-countdown.close'))
+            ->assertOk()
+            ->assertJson(['closed' => true]);
+
+        $this->assertTrue($position->fresh()->is_closed);
+        $this->assertSame(6, ElectionVote::query()
+            ->where('position_id', $position->id)
+            ->where('is_abstain', true)
+            ->distinct('voter_email')
+            ->count('voter_email'));
+
+        $this->withSession(['current_position_id' => $position->id])
+            ->get(route('results'))
+            ->assertOk();
+        $this->assertTrue($position->fresh()->is_completed);
+    }
+
+    public function test_completed_election_results_stay_on_the_last_position_without_session_state(): void
+    {
+        $firstPosition = $this->position('President');
+        $firstPosition->update(['is_completed' => true]);
+        $lastPosition = $this->position('Secretary');
+        $lastPosition->update(['is_completed' => true]);
+
+        $this->withSession(['current_position_id' => $firstPosition->id])
+            ->get(route('results'))
+            ->assertOk()
+            ->assertSee('Secretary Results')
+            ->assertDontSee('President Results');
     }
 
     public function test_multi_seat_results_only_fill_seats_with_positive_votes(): void
@@ -246,6 +360,46 @@ class ElectionScenarioTest extends TestCase
         $response = $this->withSession(['current_position_id' => $position->id])->get(route('results'));
         $response->assertOk()->assertSee('Only Winner')->assertSee('Elected winner');
         $this->assertTrue($position->fresh()->is_completed);
+    }
+
+    public function test_single_seat_tie_elects_all_candidates_with_the_highest_vote_count(): void
+    {
+        $position = $this->position('Secretary');
+        $firstCandidate = CandidateSubmission::create([
+            'candidate_name' => 'Tied Candidate One',
+            'submitted_by_email' => 'scenario-voter-1@example.test',
+            'submission_type' => 'Self-Declaration',
+            'status' => 'Approved',
+            'position_id' => $position->id,
+        ]);
+        $secondCandidate = CandidateSubmission::create([
+            'candidate_name' => 'Tied Candidate Two',
+            'submitted_by_email' => 'scenario-voter-2@example.test',
+            'submission_type' => 'Self-Declaration',
+            'status' => 'Approved',
+            'position_id' => $position->id,
+        ]);
+
+        ElectionVote::create([
+            'position_id' => $position->id,
+            'candidate_submission_id' => $firstCandidate->id,
+            'voter_email' => 'scenario-voter-1@example.test',
+            'is_abstain' => false,
+        ]);
+        ElectionVote::create([
+            'position_id' => $position->id,
+            'candidate_submission_id' => $secondCandidate->id,
+            'voter_email' => 'scenario-voter-2@example.test',
+            'is_abstain' => false,
+        ]);
+
+        $this->withSession(['current_position_id' => $position->id])
+            ->get(route('results'))
+            ->assertOk()
+            ->assertSee('Tied Candidate One')
+            ->assertSee('Tied Candidate Two')
+            ->assertSee('Elected winner 1')
+            ->assertSee('Elected winner 2');
     }
 
     public function test_no_votes_and_no_abstentions_has_no_winner(): void

@@ -1,45 +1,52 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Results pending · District 23 FYS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Vote submitted · District 23 FYS</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="flex min-h-screen items-center justify-center bg-[#f9f9ff] px-4 font-sans text-[#111c2d]">
-    <main class="w-full max-w-lg rounded-2xl bg-white p-10 text-center shadow-xl">
-        <img src="{{ asset('images/uecfi-logo.png') }}" alt="UECFI logo" class="mx-auto h-20 w-20 rounded-full object-contain">
-        <p class="mt-6 text-sm font-bold uppercase tracking-[0.2em] text-[#115cb9]">Vote submitted</p>
-        <h1 class="mt-3 text-3xl font-bold">Results pending</h1>
-        <p class="mt-3 text-sm text-[#44474c]">The result is temporarily blurred while this position is finalized.</p>
-        <div class="relative mt-7 overflow-hidden rounded-xl bg-[#eef2ff] px-6 py-5">
-            <div class="select-none blur-md" aria-hidden="true">
-                <div class="h-4 w-2/5 rounded bg-[#115cb9]/40"></div>
-                <div class="mt-4 h-3 w-full rounded bg-[#115cb9]/20"></div>
-                <div class="mt-2 h-3 w-4/5 rounded bg-[#115cb9]/20"></div>
+<body class="min-h-screen bg-[#f7f8ff] text-[#0b192c]">
+    <main class="flex min-h-screen items-center justify-center px-5 py-10">
+        <section class="w-full max-w-xl rounded-3xl bg-white px-8 py-10 text-center shadow-[0_18px_45px_rgba(11,25,44,.16)] sm:px-12">
+            <img alt="District 23 FYS logo" class="mx-auto h-24 w-24 object-contain" src="{{ asset('images/uecfi-logo.png') }}">
+            <p class="mt-6 text-sm font-bold uppercase tracking-[.28em] text-[#115cb9]">Vote submitted</p>
+            <h1 class="mt-3 text-4xl font-bold">Please wait for the result</h1>
+            <p class="mx-auto mt-4 max-w-md text-base leading-6 text-slate-600">Your vote was recorded. The result will be available when the countdown ends.</p>
+            <div class="relative mt-8 overflow-hidden rounded-2xl bg-[#eef2ff] px-6 py-10">
+                <div aria-hidden="true" class="absolute inset-0 scale-110 bg-white/50 blur-xl"></div>
+                <p class="relative text-lg font-bold text-[#115cb9]">Please wait for the result</p>
             </div>
-            <div class="absolute inset-0 flex items-center justify-center text-sm font-bold text-[#115cb9]">Results will be revealed soon</div>
-        </div>
-        <div id="countdown" class="mt-6 text-7xl font-bold text-[#115cb9]">30</div>
-        <p class="mt-2 text-xs font-bold uppercase tracking-widest text-[#75777d]">Please wait</p>
+            <p class="mt-8 text-6xl font-bold text-[#115cb9]" id="remaining-seconds">{{ $remainingSeconds }}</p>
+            <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Seconds remaining before results</p>
+            <a class="mt-8 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#0b192c] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#132742]" href="{{ route('home') }}">RETURN TO OVERVIEW</a>
+        </section>
     </main>
     <script>
-        let seconds = 30;
-        const countdown = document.getElementById('countdown');
-        const timer = window.setInterval(async () => {
-            seconds -= 1;
-            countdown.textContent = seconds;
-
-            if (seconds <= 0) {
-                window.clearInterval(timer);
-                await fetch(@json(route('ballot.auto-close')), {
-                    method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': @json(csrf_token()), Accept: 'application/json' },
-                    credentials: 'same-origin',
-                });
-                window.location.assign(@json(route('results')));
+        let remaining = Number(@json($remainingSeconds));
+        const counter = document.getElementById('remaining-seconds');
+        const closeUrl = @json(route('vote-countdown.close'));
+        const resultsUrl = @json(route('results'));
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const finish = async () => {
+            try {
+                await fetch(closeUrl, { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' }, credentials: 'same-origin' });
+            } finally {
+                window.location.replace(resultsUrl);
             }
-        }, 1000);
+        };
+        if (remaining <= 0) finish();
+        else {
+            const timer = window.setInterval(() => {
+                remaining -= 1;
+                if (counter) counter.textContent = String(Math.max(remaining, 0));
+                if (remaining <= 0) {
+                    window.clearInterval(timer);
+                    finish();
+                }
+            }, 1000);
+        }
     </script>
 </body>
 </html>

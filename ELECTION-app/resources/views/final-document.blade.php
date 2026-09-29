@@ -11,10 +11,14 @@
             [data-final-document] { box-shadow: none !important; margin: 0 !important; max-width: none !important; width: 100% !important; }
             [data-print-button] { display: none !important; }
         }
+        /* This route is the printable document, not an admin shell. */
+        body > header,
+        body > aside,
+        .mobile-admin-nav { display: none !important; }
     </style>
 </head>
-<body class="min-h-screen bg-[#f9f9ff] px-4 py-8 font-sans text-[#111c2d]">
-    <main data-final-document class="mx-auto max-w-5xl bg-white p-8 shadow-sm sm:p-12">
+<body class="min-h-screen bg-white font-sans text-[#111c2d]">
+    <main data-final-document class="mx-auto max-w-5xl bg-white p-8 shadow-none sm:p-12">
         <div class="mb-6 flex justify-end" data-print-button>
             <button type="button" onclick="window.print()" class="inline-flex items-center gap-2 rounded bg-[#115cb9] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#0e1c2f]">
                 <span aria-hidden="true">🖨</span> PRINT DOCUMENT
@@ -40,8 +44,11 @@
                     <th class="w-1/3 border border-slate-500 bg-slate-200 p-2 text-left align-top text-base font-bold">{{ $result['position']->name }}</th>
                     <td class="border border-slate-500 p-2 align-top">
                         <div class="grid grid-cols-1 gap-x-8 gap-y-1 sm:grid-cols-2">
-                            @for ($seat = 0; $seat < $result['position']->seats; $seat++)
-                                <div class="flex min-h-6 items-start gap-1"><span class="shrink-0 font-normal">{{ $result['position']->seats > 1 ? ($seat + 1).'.' : '' }}</span><span>{{ $result['winners']->get($seat)?->display_candidate_name ?? '' }}</span></div>
+                            @foreach ($result['winners'] as $winner)
+                                <div class="flex min-h-6 items-start gap-1"><span class="shrink-0 font-normal">{{ $result['position']->seats > 1 ? ($loop->iteration).'.' : '' }}</span><span>{{ $winner->display_candidate_name }}</span></div>
+                            @endforeach
+                            @for ($seat = $result['winners']->count(); $seat < $result['position']->seats; $seat++)
+                                <div class="flex min-h-6 items-start gap-1"><span class="shrink-0 font-normal">{{ $result['position']->seats > 1 ? ($seat + 1).'.' : '' }}</span><span></span></div>
                             @endfor
                         </div>
                     </td>

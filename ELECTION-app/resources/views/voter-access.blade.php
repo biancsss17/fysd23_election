@@ -17,18 +17,39 @@
 
         @if (session('access_error'))
             <div class="auto-dismiss-5s mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700" role="alert">{{ session('access_error') }}</div>
+            @if (session('duplicate_voter_access_email'))
+                <a class="mt-4 flex w-full items-center justify-center rounded-lg bg-[#0b192c] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#132742]" href="{{ route('ballot') }}">Return to active ballot</a>
+            @endif
+        @endif
+
+        @php($votingOpen = $position && $position->is_unlocked && ! $position->is_closed)
+        @if (! $votingOpen)
+            <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900" role="status">Voting access will open when the administrator unlocks {{ $position?->name ?? 'the ballot' }}.</div>
         @endif
 
         <form class="mt-6 space-y-4" method="POST" action="{{ route('voter-access.verify') }}">
             @csrf
             <label class="block text-sm font-bold" for="email">Registered email address
-                <input class="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 font-normal outline-none transition focus:border-[#115cb9] focus:ring-2 focus:ring-[#115cb9]/20" id="email" name="email" type="email" value="{{ old('email') }}" placeholder="name@example.com" required autofocus>
+                <input class="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 font-normal outline-none transition focus:border-[#115cb9] focus:ring-2 focus:ring-[#115cb9]/20 {{ session('duplicate_voter_access_email') ? 'cursor-not-allowed opacity-75' : '' }}" id="email" name="email" type="email" value="{{ session('duplicate_voter_access_email') ?: old('email') }}" placeholder="name@example.com" required autofocus @if (session('duplicate_voter_access_email')) readonly @endif>
             </label>
             @error('email')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
-            <button class="flex w-full items-center justify-center gap-2 rounded-lg bg-violet-700 px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-800" type="submit">Submit</button>
+            <button class="flex w-full items-center justify-center gap-2 rounded-lg bg-violet-700 px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-50" type="submit" @disabled(! $votingOpen)>{{ $votingOpen ? 'Submit' : 'Voting locked' }}</button>
         </form>
 
         <a class="mt-4 block text-center text-sm font-semibold text-[#115cb9]" href="{{ route('home') }}">Back to overview</a>
     </main>
+    <script>
+        const electionDataUrl = @json(route('election.data'));
+        const initialVotingOpen = @json($votingOpen);
+        setInterval(async () => {
+            try {
+                const response = await fetch(electionDataUrl, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+                if (!response.ok) return;
+                const data = await response.json();
+                const votingOpen = Boolean(data.active_position?.is_unlocked && !data.active_position?.is_closed);
+                if (votingOpen !== initialVotingOpen) window.location.reload();
+            } catch {}
+        }, 1000);
+    </script>
 </body>
 </html>

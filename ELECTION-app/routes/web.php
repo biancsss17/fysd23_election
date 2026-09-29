@@ -11,8 +11,8 @@ Route::post('/voter-access/verify', [HomeController::class, 'verifyVoterAccess']
 Route::post('/candidacy', [HomeController::class, 'submitCandidacy'])->name('candidacy.submit');
 Route::post('/nomination', [HomeController::class, 'submitNomination'])->name('nomination.submit');
 Route::post('/vote/submit', [HomeController::class, 'submitVote'])->name('vote.submit');
-Route::post('/ballot/auto-close', [HomeController::class, 'autoCloseBallot'])->name('ballot.auto-close');
 Route::get('/vote-countdown', [HomeController::class, 'voteCountdown'])->name('vote-countdown');
+Route::post('/vote-countdown/close', [HomeController::class, 'autoCloseBallot'])->name('vote-countdown.close');
 Route::get('/results', [HomeController::class, 'results'])->name('results');
 Route::get('/final-document', [HomeController::class, 'finalDocument'])->name('final-document');
 Route::get('/ballot/{positionId?}', [HomeController::class, 'ballot'])->name('ballot');
@@ -35,12 +35,14 @@ Route::delete('/admin/voter-management/{voter}', [AdminAuthController::class, 'd
 Route::get('/admin/position-management', [AdminAuthController::class, 'positionManagement'])->middleware('admin.auth')->name('admin.position-management');
 Route::post('/admin/position-management', [AdminAuthController::class, 'storePosition'])->middleware('admin.auth')->name('admin.position-management.store');
 Route::delete('/admin/position-management/{position}', [AdminAuthController::class, 'deletePosition'])->middleware('admin.auth')->name('admin.position-management.destroy');
+Route::patch('/admin/position-management/{position}/reorder', [AdminAuthController::class, 'reorderPosition'])->middleware('admin.auth')->name('admin.position-management.reorder');
+Route::post('/admin/position-management/{position}/reorder', [AdminAuthController::class, 'reorderPosition'])->middleware('admin.auth')->name('admin.position-management.reorder.post');
 Route::patch('/admin/position-management/{position}/unlock', [AdminAuthController::class, 'unlockPosition'])->middleware('admin.auth')->name('admin.position-management.unlock');
 Route::patch('/admin/position-management/{position}/lock', [AdminAuthController::class, 'lockPosition'])->middleware('admin.auth')->name('admin.position-management.lock');
 Route::patch('/admin/position-management/{position}/close', [AdminAuthController::class, 'closePosition'])->middleware('admin.auth')->name('admin.position-management.close');
-Route::get('/admin/candidates-nominations', [AdminAuthController::class, 'candidatesNominations'])->middleware('admin.auth')->name('admin.candidates-nominations');
-Route::patch('/admin/candidates-nominations/{candidateSubmission}/status', [AdminAuthController::class, 'updateCandidateStatus'])->middleware('admin.auth')->name('admin.candidates-nominations.status');
-Route::patch('/admin/candidates-nominations/{position}/finalize', [AdminAuthController::class, 'finalizeCandidates'])->middleware('admin.auth')->name('admin.candidates-nominations.finalize');
+Route::patch('/admin/position-management/{position}/reopen', [AdminAuthController::class, 'reopenPosition'])->middleware('admin.auth')->name('admin.position-management.reopen');
+Route::patch('/admin/position-management/{position}/candidacy', [AdminAuthController::class, 'toggleCandidacy'])->middleware('admin.auth')->name('admin.position-management.candidacy');
+Route::patch('/admin/position-management/{position}/nomination', [AdminAuthController::class, 'toggleNomination'])->middleware('admin.auth')->name('admin.position-management.nomination');
 Route::get('/admin/results-document-preview', [AdminAuthController::class, 'resultsDocumentPreview'])->middleware('admin.auth')->name('admin.results-document-preview');
 Route::patch('/admin/results-document-preview/winner/{candidateSubmission}', [AdminAuthController::class, 'updateWinnerName'])->middleware('admin.auth')->name('admin.results-document-preview.winner.update');
 Route::post('/admin/results-document-preview/position/{position}/winner', [AdminAuthController::class, 'addManualWinner'])->middleware('admin.auth')->name('admin.results-document-preview.winner.add');

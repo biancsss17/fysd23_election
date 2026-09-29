@@ -49,7 +49,7 @@
             <section class="relative mb-4 overflow-hidden rounded-2xl bg-[#0b192c] p-5 text-white shadow-lg">
                 <div class="mb-3 flex items-center justify-between gap-2"><span class="inline-flex items-center gap-1.5 rounded-full bg-[#ffde59] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#0b192c]"><span class="h-1.5 w-1.5 rounded-full bg-[#0b192c]"></span>Current position</span><span class="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/80">1 Seat Available</span></div>
                 <h2 class="font-display text-3xl font-extrabold uppercase tracking-tight">President</h2>
-                <div class="mt-3 flex flex-col gap-1 border-t border-white/10 pt-3"><p class="flex items-center gap-1.5 text-xs text-white/80"><span class="material-symbols-outlined text-base text-[#ffde59]">check_circle</span>Select 1 Candidate · Secret &amp; Certified Ballot</p><p class="text-[11px] text-white/60">Single-choice vote · Abstain option available below</p></div>
+                <div class="mt-3 flex flex-col gap-1 border-t border-white/10 pt-3"><p class="flex items-center gap-1.5 text-xs text-white/80"><span class="material-symbols-outlined text-base text-[#ffde59]">check_circle</span>Select 1 Candidate · Secret &amp; Certified Ballot</p><p class="text-[11px] text-white/60">Single-choice vote · Abstain option available below</p><p class="{{ $remainingSeconds > 0 ? '' : 'hidden' }} mt-2 text-xs font-bold uppercase tracking-widest text-[#ffde59]" id="ballot-countdown-wrap">Voting window: <span id="ballot-countdown">{{ $remainingSeconds }}</span>s remaining</p></div>
             </section>
 
             <form class="grid gap-3 lg:grid-cols-2" id="ballot-form">
@@ -67,7 +67,7 @@
             <div class="sticky bottom-4 z-20 mt-6"><button class="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0b192c] px-6 py-4 text-base font-bold tracking-wide text-white shadow-xl transition-all hover:bg-[#132742] active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50" data-next-url="{{ route('vote-countdown') }}" disabled id="submit-ballot-btn" type="button">SUBMIT MY VOTE <span class="material-symbols-outlined text-xl">arrow_forward</span></button></div>
         </div>
     </main>
-    <script>window.electionPosition = @json($position); window.candidateSubmissions = @json($candidateSubmissions); window.electionDataUrl = @json(route('election.data')); window.voteSubmitUrl = @json(route('vote.submit')); window.voteCsrfToken = @json(csrf_token()); window.homeUrl = @json(route('home')); window.resultsUrl = @json(route('results'));</script>
+    <script>window.electionPosition = @json($position); window.candidateSubmissions = @json($candidateSubmissions); window.ballotRemainingSeconds = @json($remainingSeconds); window.ballotCloseUrl = @json(route('vote-countdown.close')); window.electionDataUrl = @json(route('election.data')); window.voteSubmitUrl = @json(route('vote.submit')); window.voteCsrfToken = @json(csrf_token()); window.homeUrl = @json(route('home')); window.resultsUrl = @json(route('results'));</script>
     <script src="{{ asset('js/app.js') }}?v={{ filemtime(public_path('js/app.js')) }}"></script>
 </body>
 </html>

@@ -16,7 +16,7 @@
 <body class="min-h-screen bg-surface font-sans text-[#111c2d] antialiased">
     @include('admin.partials.header')
 
-    <aside class="fixed bottom-0 left-0 top-16 z-40 hidden w-64 bg-surface-container-low py-6 lg:flex lg:flex-col"><div class="px-6 pb-4 text-[11px] font-bold uppercase tracking-wider text-[#44474c]">Navigation</div><nav class="flex flex-col gap-1 px-2"><a aria-current="page" class="flex items-center gap-2 rounded border-l-4 border-tertiary-fixed bg-surface-container-high px-4 py-2.5 pl-5 text-sm font-bold text-secondary" href="{{ route('admin.dashboard') }}"><span class="material-symbols-outlined text-xl">dashboard</span>Dashboard</a><a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-surface-container-high hover:text-[#111c2d]" href="{{ route('admin.voter-management') }}"><span class="material-symbols-outlined text-xl">badge</span>Voter Management</a><a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-surface-container-high hover:text-[#111c2d]" href="{{ route('admin.position-management') }}"><span class="material-symbols-outlined text-xl">work</span>Position Management</a><a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-surface-container-high hover:text-[#111c2d]" href="{{ route('admin.candidates-nominations') }}"><span class="material-symbols-outlined text-xl">groups</span>Candidates &amp; Nominations</a><a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-surface-container-high hover:text-[#111c2d]" href="{{ route('admin.results-document-preview') }}"><span class="material-symbols-outlined text-xl">description</span>Results &amp; Document Preview</a><a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-surface-container-high hover:text-[#111c2d]" href="{{ route('admin.audit-log') }}"><span class="material-symbols-outlined text-xl">history_edu</span>Audit Log</a></nav></aside>
+<aside class="fixed bottom-0 left-0 top-16 z-40 hidden w-64 bg-surface-container-low py-6 lg:flex lg:flex-col"><div class="px-6 pb-4 text-[11px] font-bold uppercase tracking-wider text-[#44474c]">Navigation</div><nav class="flex flex-col gap-1 px-2"><a aria-current="page" class="flex items-center gap-2 rounded border-l-4 border-tertiary-fixed bg-surface-container-high px-4 py-2.5 pl-5 text-sm font-bold text-secondary" href="{{ route('admin.dashboard') }}"><span class="material-symbols-outlined text-xl">dashboard</span>Dashboard</a><a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-surface-container-high hover:text-[#111c2d]" href="{{ route('admin.voter-management') }}"><span class="material-symbols-outlined text-xl">badge</span>Voter Management</a><a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-surface-container-high hover:text-[#111c2d]" href="{{ route('admin.position-management') }}"><span class="material-symbols-outlined text-xl">work</span>Position Management</a><a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-surface-container-high hover:text-[#111c2d]" href="{{ route('admin.results-document-preview') }}"><span class="material-symbols-outlined text-xl">description</span>Results &amp; Document Preview</a><a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-surface-container-high hover:text-[#111c2d]" href="{{ route('admin.audit-log') }}"><span class="material-symbols-outlined text-xl">history_edu</span>Audit Log</a></nav></aside>
 
     <main class="min-h-screen bg-surface px-5 pb-10 pt-24 lg:pl-72 lg:pr-8"><div class="mx-auto flex w-full max-w-[1240px] flex-col gap-6">
         @if (session('election_reset'))
@@ -44,7 +44,33 @@
                     <h2 class="mt-1 font-display text-2xl font-semibold">Ballot controls</h2>
                 </div>
             </div>
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div class="flex flex-col items-start rounded-lg bg-surface-container-low p-5">
+                    <span class="mb-2 flex h-10 w-10 items-center justify-center rounded bg-white text-secondary shadow-sm"><span class="material-symbols-outlined">how_to_vote</span></span>
+                    <span class="font-bold">CANDIDACY</span>
+                    <span class="text-sm text-[#44474c]">Allow self-declarations for {{ $position?->name ?? 'the current position' }}</span>
+                    @if ($position)
+                        <form class="mt-4 w-full" method="POST" action="{{ route('admin.position-management.candidacy', $position) }}">
+                            @csrf @method('PATCH')
+                            <button class="w-full rounded px-4 py-3 text-sm font-bold text-white transition {{ $position->candidacy_open ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-secondary hover:bg-primary-container' }}" type="submit">{{ $position->candidacy_open ? '✓ CANDIDACY OPEN' : 'START CANDIDACY' }}</button>
+                        </form>
+                    @else
+                        <span class="mt-4 text-sm text-[#44474c]">No active position</span>
+                    @endif
+                </div>
+                <div class="flex flex-col items-start rounded-lg bg-surface-container-low p-5">
+                    <span class="mb-2 flex h-10 w-10 items-center justify-center rounded bg-white text-[#5a4300] shadow-sm"><span class="material-symbols-outlined">recommend</span></span>
+                    <span class="font-bold">NOMINATION</span>
+                    <span class="text-sm text-[#44474c]">Allow peer nominations for {{ $position?->name ?? 'the current position' }}</span>
+                    @if ($position)
+                        <form class="mt-4 w-full" method="POST" action="{{ route('admin.position-management.nomination', $position) }}">
+                            @csrf @method('PATCH')
+                            <button class="w-full rounded px-4 py-3 text-sm font-bold text-[#251a00] transition {{ $position->nomination_open ? 'bg-emerald-300 hover:bg-emerald-400' : 'bg-tertiary-fixed hover:bg-tertiary-fixed-dim' }}" type="submit">{{ $position->nomination_open ? '✓ NOMINATION OPEN' : 'START NOMINATION' }}</button>
+                        </form>
+                    @else
+                        <span class="mt-4 text-sm text-[#44474c]">No active position</span>
+                    @endif
+                </div>
                 <div class="flex flex-col items-start rounded-lg bg-surface-container-low p-5">
                     <span class="mb-2 flex h-10 w-10 items-center justify-center rounded bg-white text-secondary shadow-sm"><span class="material-symbols-outlined">lock_open</span></span>
                     <span class="font-bold">UNLOCK BALLOT</span>
@@ -52,7 +78,7 @@
                     @if ($position && ! $position->is_unlocked)
                         <form class="mt-4 w-full" method="POST" action="{{ route('admin.position-management.unlock', $position) }}">
                             @csrf @method('PATCH')
-                            <button class="w-full rounded bg-secondary px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-container" type="submit">UNLOCK {{ strtoupper($position->name) }}</button>
+                            <button class="w-full rounded bg-violet-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-violet-800" type="submit">UNLOCK {{ strtoupper($position->name) }}</button>
                         </form>
                     @elseif ($position)
                         <div class="mt-4 flex w-full flex-col gap-2">
@@ -66,14 +92,25 @@
                         <span class="mt-4 text-sm text-[#44474c]">No active position</span>
                     @endif
                 </div>
-                <form class="flex flex-col items-start rounded-lg bg-surface-container-low p-5" method="POST" action="{{ $position ? route('admin.position-management.close', $position) : '#' }}" onsubmit="return confirm('Close voting for this position? Voters will be blocked immediately.');">
-                    @csrf @method('PATCH')
-                    <button class="flex w-full flex-col items-start disabled:cursor-not-allowed disabled:opacity-50" type="submit" @disabled(! $position || $position->is_closed)>
-                        <span class="mb-2 flex h-10 w-10 items-center justify-center rounded bg-white text-[#44474c] shadow-sm"><span class="material-symbols-outlined">block</span></span>
-                        <span class="font-bold">{{ $position?->is_closed ? 'VOTING CLOSED' : 'CLOSE VOTING' }}</span>
-                        <span class="text-sm text-[#44474c]">{{ $position?->is_closed ? 'Voters are blocked' : 'Optional manual close' }}</span>
-                    </button>
-                </form>
+                @if ($position?->is_closed)
+                    <form class="flex flex-col items-start rounded-lg bg-surface-container-low p-5" method="POST" action="{{ route('admin.position-management.reopen', $position) }}" onsubmit="return confirm('Reopen voting for this position? Voters will be allowed to vote again.');">
+                        @csrf @method('PATCH')
+                        <button class="flex w-full flex-col items-start" type="submit">
+                            <span class="mb-2 flex h-10 w-10 items-center justify-center rounded bg-white text-violet-700 shadow-sm"><span class="material-symbols-outlined">lock_open</span></span>
+                            <span class="font-bold">REOPEN VOTING</span>
+                            <span class="text-sm text-[#44474c]">Allow voters to continue</span>
+                        </button>
+                    </form>
+                @else
+                    <form class="flex flex-col items-start rounded-lg bg-surface-container-low p-5" method="POST" action="{{ $position ? route('admin.position-management.close', $position) : '#' }}" onsubmit="return confirm('Close voting for this position? Voters will be blocked immediately.');">
+                        @csrf @method('PATCH')
+                        <button class="flex w-full flex-col items-start disabled:cursor-not-allowed disabled:opacity-50" type="submit" @disabled(! $position)>
+                            <span class="mb-2 flex h-10 w-10 items-center justify-center rounded bg-white text-[#44474c] shadow-sm"><span class="material-symbols-outlined">block</span></span>
+                            <span class="font-bold">CLOSE VOTING</span>
+                            <span class="text-sm text-[#44474c]">Optional manual close</span>
+                        </button>
+                    </form>
+                @endif
             </div>
         </section>
         @if ($position)

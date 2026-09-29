@@ -18,7 +18,6 @@
             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff]"><span class="material-symbols-outlined text-xl">dashboard</span>Dashboard</a>
             <a aria-current="page" href="{{ route('admin.voter-management') }}" class="flex items-center gap-2 rounded border-l-4 border-[#ffdf98] bg-[#dee8ff] px-4 py-2.5 pl-5 text-sm font-bold text-[#115cb9]"><span class="material-symbols-outlined text-xl">badge</span>Voter Management</a>
             <a href="{{ route('admin.position-management') }}" class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff]"><span class="material-symbols-outlined text-xl">work</span>Position Management</a>
-            <a href="{{ route('admin.candidates-nominations') }}" class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff]"><span class="material-symbols-outlined text-xl">groups</span>Candidates &amp; Nominations</a>
             <a href="{{ route('admin.results-document-preview') }}" class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff]"><span class="material-symbols-outlined text-xl">description</span>Results &amp; Document Preview</a>
         </nav>
     </aside>
@@ -35,6 +34,71 @@
     <script>
         function openImportVoterModal() { const modal = document.getElementById('import-voter-modal'); modal.classList.remove('hidden'); modal.classList.add('flex'); } function closeImportVoterModal() { const modal = document.getElementById('import-voter-modal'); modal.classList.add('hidden'); modal.classList.remove('flex'); } function openAddVoterModal() { const modal = document.getElementById('add-voter-modal'); modal.classList.remove('hidden'); modal.classList.add('flex'); } function closeAddVoterModal() { const modal = document.getElementById('add-voter-modal'); modal.classList.add('hidden'); modal.classList.remove('flex'); } function showNotice(message) { const notice = document.getElementById('notice'); notice.textContent = message; notice.classList.remove('hidden'); setTimeout(() => notice.classList.add('hidden'), 3000); } @if (session('voter_success')) showNotice(@json(session('voter_success'))); @endif @if (session('voter_error') || $errors->any()) openAddVoterModal(); @endif @if (session('voter_import_error')) openImportVoterModal(); @endif
         let latestVoterUpdate = @json($voters->max('updated_at')); setInterval(async () => { const modalOpen = document.querySelectorAll('#add-voter-modal.flex, #import-voter-modal.flex').length > 0; if (modalOpen) return; try { const response = await fetch("{{ route('admin.voter-management.data') }}", { headers: { Accept: 'application/json' }, credentials: 'same-origin' }); if (!response.ok) return; const data = await response.json(); if (data.latest_updated_at !== latestVoterUpdate || data.count !== {{ $voters->count() }}) { latestVoterUpdate = data.latest_updated_at; window.refreshLivePage?.(); } } catch (error) { console.warn('Live voter update check failed.', error); } }, 5000); document.getElementById('voter-search').addEventListener('input', (event) => { const query = event.target.value.toLowerCase(); document.querySelectorAll('.voter-row').forEach((row) => row.classList.toggle('hidden', !row.dataset.email.includes(query))); });
+    </script>
+    <script>
+        window.voterFilterState = @json($voters->mapWithKeys(fn ($voter): array => [strtolower($voter->email) => ['voted' => $votedEmails->contains(strtolower($voter->email)), 'eligible' => (bool) $voter->is_active]])->all());
+        (() => {
+            const initializeVoterFilters = () => {
+                const rows = Array.from(document.querySelectorAll('#voter-table .voter-row'));
+                const buttons = Array.from(document.querySelectorAll('button')).filter((button) => /^(All|Voted|Not Yet|Eligible|Ineligible) \(/.test(button.textContent.trim()));
+                const search = document.getElementById('voter-search');
+                let activeFilter = 'all';
+                const state = window.voterFilterState || {};
+                const matches = (row) => {
+                    const email = row.dataset.email || '';
+                    const voter = state[email] || { voted: false, eligible: true };
+                    const filterMatches = activeFilter === 'all'
+                        || (activeFilter === 'voted' && voter.voted)
+                        || (activeFilter === 'not-yet' && voter.eligible && !voter.voted)
+                        || (activeFilter === 'eligible' && voter.eligible)
+                        || (activeFilter === 'ineligible' && !voter.eligible);
+                    return filterMatches && email.includes((search?.value || '').toLowerCase());
+                };
+                const update = () => {
+                    rows.forEach((row) => {
+                        const email = row.dataset.email || '';
+                        const voter = state[email] || { voted: false, eligible: true };
+                        const status = row.querySelector('td:last-child span');
+                        if (status) status.innerHTML = voter.voted
+                            ? '<span class="material-symbols-outlined text-base">check_circle</span>Voted'
+                            : '<span class="material-symbols-outlined text-base">schedule</span>Not Yet';
+                        row.classList.toggle('hidden', !matches(row));
+                    });
+                    const counts = {
+                        all: rows.length,
+                        voted: rows.filter((row) => state[row.dataset.email]?.voted).length,
+                        'not-yet': rows.filter((row) => state[row.dataset.email]?.eligible && !state[row.dataset.email]?.voted).length,
+                        eligible: rows.filter((row) => state[row.dataset.email]?.eligible).length,
+                        ineligible: rows.filter((row) => !state[row.dataset.email]?.eligible).length,
+                    };
+                    buttons.forEach((button) => {
+                        const match = button.textContent.trim().match(/^(All|Voted|Not Yet|Eligible|Ineligible)/);
+                        const key = { All: 'all', Voted: 'voted', 'Not Yet': 'not-yet', Eligible: 'eligible', Ineligible: 'ineligible' }[match?.[1]];
+                        if (!key) return;
+                        button.textContent = `${match[1]} (${counts[key]})`;
+                        button.classList.toggle('bg-[#0e1c2f]', key === activeFilter);
+                        button.classList.toggle('text-white', key === activeFilter);
+                        button.classList.toggle('font-bold', key === activeFilter);
+                        button.classList.toggle('bg-[#f0f3ff]', key !== activeFilter);
+                        button.classList.toggle('text-[#44474c]', key !== activeFilter);
+                        button.classList.toggle('font-semibold', key !== activeFilter);
+                    });
+                };
+                buttons.forEach((button) => {
+                    if (button.dataset.voterFilterBound) return;
+                    button.dataset.voterFilterBound = 'true';
+                    button.addEventListener('click', () => {
+                        const label = button.textContent.trim().match(/^(All|Voted|Not Yet|Eligible|Ineligible)/)?.[1];
+                        activeFilter = { All: 'all', Voted: 'voted', 'Not Yet': 'not-yet', Eligible: 'eligible', Ineligible: 'ineligible' }[label] || 'all';
+                        update();
+                    });
+                });
+                search?.addEventListener('input', update);
+                update();
+            };
+            initializeVoterFilters();
+            document.addEventListener('admin-main-refreshed', initializeVoterFilters);
+        })();
     </script>
 </body>
 </html>

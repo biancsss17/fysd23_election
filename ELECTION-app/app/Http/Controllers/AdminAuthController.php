@@ -83,7 +83,7 @@ class AdminAuthController extends Controller
         $archiveTitle = $archiveTitle !== '' ? mb_substr($archiveTitle, 0, 255) : 'FYS DISTRICT 23 ELECTION FOR 2027-2030';
 
         DB::transaction(function () use ($archiveTitle): void {
-            $positions = ElectionPosition::query()->orderBy('id')->get();
+            $positions = ElectionPosition::query()->orderBy('sort_order')->orderBy('id')->get();
             $archivedResults = $positions
                 ->map(function (ElectionPosition $position): array {
                     $result = $this->buildPositionResult($position);
@@ -104,7 +104,7 @@ class AdminAuthController extends Controller
 
             $snapshot = [
                 'positions' => $positions->map(fn (ElectionPosition $position): array => $position->only([
-                    'id', 'name', 'seats', 'rule', 'allow_abstain', 'max_selections', 'is_completed', 'is_unlocked', 'is_closed',
+                    'id', 'name', 'sort_order', 'seats', 'rule', 'allow_abstain', 'max_selections', 'is_completed', 'is_unlocked', 'is_closed', 'candidacy_open', 'nomination_open', 'unlocked_at',
                 ]))->values()->all(),
                 'voters' => RegisteredVoter::query()->get()->map(fn (RegisteredVoter $voter): array => $voter->only(['email', 'is_active']))->values()->all(),
                 'candidates' => CandidateSubmission::query()->get()->map(fn (CandidateSubmission $candidate): array => $candidate->only([
@@ -201,8 +201,16 @@ class AdminAuthController extends Controller
 
     public function voterManagement(): View
     {
+        $votedEmails = ElectionVote::query()
+            ->distinct()
+            ->pluck('voter_email')
+            ->map(fn (string $email): string => strtolower(trim($email)))
+            ->unique()
+            ->values();
+
         return view('admin-voter-management', [
             'voters' => RegisteredVoter::query()->orderBy('email')->get(),
+            'votedEmails' => $votedEmails,
         ]);
     }
 
@@ -218,7 +226,7 @@ class AdminAuthController extends Controller
 
     public function positionManagement(): View
     {
-        $positions = ElectionPosition::query()->orderBy('id')->get();
+        $positions = ElectionPosition::query()->orderBy('sort_order')->orderBy('id')->get();
         $sequence = ['President', 'Vice President', 'Secretary', 'Assist Sec', 'Treasurer', 'Auditor', 'Board of Directors', 'Inspector'];
         $existingNames = $positions->pluck('name')->map(fn (string $name): string => strtolower(trim($name)));
         $nextPositionName = collect($sequence)
@@ -230,51 +238,11 @@ class AdminAuthController extends Controller
         ]);
     }
 
-    public function candidatesNominations(): View
-    {
-        $position = $this->activePosition();
-
-        return view('admin-candidates-nominations', [
-            'position' => $position,
-            'submissions' => CandidateSubmission::query()
-                ->where('status', '!=', 'Rejected')
-                ->when($position, fn ($query) => $query->where('position_id', $position->id))
-                ->orderByDesc('id')
-                ->get(),
-        ]);
-    }
-
-    public function updateCandidateStatus(Request $request, CandidateSubmission $candidateSubmission): RedirectResponse
-    {
-        $validated = $request->validate(['status' => ['required', 'in:Approved,Rejected']]);
-        $candidateSubmission->update(['status' => $validated['status']]);
-
-        return redirect()->route('admin.candidates-nominations')->with(
-            'candidate_success',
-            "{$candidateSubmission->candidate_name} marked {$validated['status']}."
-        );
-    }
-
-    public function finalizeCandidates(ElectionPosition $position): RedirectResponse
-    {
-        CandidateSubmission::query()
-            ->where('position_id', $position->id)
-            ->where('status', 'Pending')
-            ->update(['status' => 'Approved']);
-
-        $position->update(['is_unlocked' => false, 'is_closed' => false]);
-
-        return redirect()->route('admin.candidates-nominations')->with(
-            'candidate_success',
-            "{$position->name} candidates finalized successfully."
-        );
-    }
-
     public function resultsDocumentPreview(): View
     {
         $registeredVoterCount = RegisteredVoter::query()->where('is_active', true)->count();
         $positions = ElectionPosition::query()
-            ->orderBy('id')
+            ->orderBy('sort_order')->orderBy('id')
             ->get()
             ->map(fn (ElectionPosition $position): array => $this->buildPositionResult($position))
             ->filter(fn (array $result): bool => $result['candidates']->isNotEmpty() || $result['ballots_cast'] > 0 || $result['abstentions'] > 0)
@@ -332,6 +300,7 @@ class AdminAuthController extends Controller
 
         $position = ElectionPosition::query()->create([
             'name' => trim($validated['position_name']),
+            'sort_order' => ((int) ElectionPosition::query()->max('sort_order')) + 1,
             'seats' => 1,
             'rule' => 'single',
             'allow_abstain' => true,
@@ -364,20 +333,19 @@ class AdminAuthController extends Controller
         $validated = $request->validate([
             'position_name' => ['required', 'string', 'max:255'],
             'seats' => ['required', 'integer', 'min:1', 'max:10'],
-            'rule' => ['required', 'in:single,multi'],
             'allow_abstain' => ['nullable', 'boolean'],
             'max_selections' => ['required', 'integer', 'min:1', 'max:5'],
         ]);
 
-        $seats = $validated['rule'] === 'single' ? 1 : max(2, $validated['seats']);
-        $maxSelections = $validated['rule'] === 'single'
-            ? 1
-            : min($validated['max_selections'], $seats);
+        $seats = (int) $validated['seats'];
+        $rule = $seats === 1 ? 'single' : 'multi';
+        $maxSelections = (int) $validated['max_selections'];
 
         ElectionPosition::query()->create([
             'name' => trim($validated['position_name']),
+            'sort_order' => ((int) ElectionPosition::query()->max('sort_order')) + 1,
             'seats' => $seats,
-            'rule' => $validated['rule'],
+            'rule' => $rule,
             'allow_abstain' => (bool) ($validated['allow_abstain'] ?? false),
             'max_selections' => $maxSelections,
         ]);
@@ -385,8 +353,44 @@ class AdminAuthController extends Controller
         return redirect()->route('admin.position-management')->with('position_success', 'Position created successfully.');
     }
 
+    public function reorderPosition(Request $request, ElectionPosition $position): RedirectResponse
+    {
+        $validated = $request->validate([
+            'direction' => ['nullable', 'in:up,down'],
+            'target_position_id' => ['nullable', 'integer', 'exists:election_positions,id'],
+        ]);
+
+        $target = ! empty($validated['target_position_id'])
+            ? ElectionPosition::query()->find($validated['target_position_id'])
+            : null;
+
+        $positions = ElectionPosition::query()
+            ->orderBy('sort_order')->orderBy('id')->get();
+        if (! $target && ! empty($validated['direction'])) {
+            $index = $positions->search(fn (ElectionPosition $item): bool => $item->id === $position->id);
+            $targetIndex = $validated['direction'] === 'up' ? $index - 1 : $index + 1;
+            $target = $index !== false ? $positions->get($targetIndex) : null;
+        }
+
+        if (! $target || $target->id === $position->id) {
+            return back()->with('position_error', 'Choose a different position to swap.');
+        }
+
+        DB::transaction(function () use ($position, $target): void {
+            $currentOrder = $position->sort_order;
+            $position->update(['sort_order' => $target->sort_order]);
+            $target->update(['sort_order' => $currentOrder]);
+        });
+
+        return back()->with('position_success', 'Position order updated successfully.');
+    }
+
     public function deletePosition(ElectionPosition $position): RedirectResponse
     {
+        if ($position->is_completed) {
+            return back()->with('position_error', 'Completed positions cannot be erased.');
+        }
+
         DB::transaction(function () use ($position): void {
             $candidateIds = CandidateSubmission::query()
                 ->where('position_id', $position->id)
@@ -415,7 +419,7 @@ class AdminAuthController extends Controller
             return back()->with('position_error', 'Only the current position can be unlocked.');
         }
 
-        $position->update(['is_unlocked' => true, 'is_closed' => false]);
+        $position->update(['is_unlocked' => true, 'is_closed' => false, 'unlocked_at' => now()]);
 
         return redirect()->route('admin.dashboard')->with('position_success', "{$position->name} ballot unlocked successfully.");
     }
@@ -429,9 +433,26 @@ class AdminAuthController extends Controller
         }
 
         $this->recordAutomaticAbstentions($position);
-        $position->update(['is_closed' => true, 'is_unlocked' => false]);
+        $position->update(['is_closed' => true, 'is_unlocked' => false, 'unlocked_at' => null]);
 
         return back()->with('position_success', "{$position->name} voting has been closed.");
+    }
+
+    public function reopenPosition(ElectionPosition $position): RedirectResponse
+    {
+        $activePosition = $this->activePosition();
+
+        if (! $activePosition || $activePosition->id !== $position->id) {
+            return back()->with('position_error', 'Only the current position can be reopened.');
+        }
+
+        if ($position->is_completed) {
+            return back()->with('position_error', 'Completed positions cannot be reopened.');
+        }
+
+        $position->update(['is_closed' => false, 'is_unlocked' => true, 'unlocked_at' => now()]);
+
+        return back()->with('position_success', "{$position->name} voting reopened successfully.");
     }
 
     public function lockPosition(ElectionPosition $position): RedirectResponse
@@ -442,9 +463,35 @@ class AdminAuthController extends Controller
             return back()->with('position_error', 'Only the current position can be locked.');
         }
 
-        $position->update(['is_unlocked' => false, 'is_closed' => false]);
+        $position->update(['is_unlocked' => false, 'is_closed' => false, 'unlocked_at' => null]);
 
         return back()->with('position_success', "{$position->name} ballot locked successfully.");
+    }
+
+    public function toggleCandidacy(ElectionPosition $position): RedirectResponse
+    {
+        if ($position->is_completed || $position->is_closed) {
+            return back()->with('position_error', 'Completed or closed positions cannot accept candidacy submissions.');
+        }
+
+        $position->update(['candidacy_open' => ! $position->candidacy_open]);
+
+        return back()->with('position_success', $position->candidacy_open
+            ? "{$position->name} candidacy is now open."
+            : "{$position->name} candidacy is now closed.");
+    }
+
+    public function toggleNomination(ElectionPosition $position): RedirectResponse
+    {
+        if ($position->is_completed || $position->is_closed) {
+            return back()->with('position_error', 'Completed or closed positions cannot accept nominations.');
+        }
+
+        $position->update(['nomination_open' => ! $position->nomination_open]);
+
+        return back()->with('position_success', $position->nomination_open
+            ? "{$position->name} nominations are now open."
+            : "{$position->name} nominations are now closed.");
     }
 
     public function storeVoter(Request $request): RedirectResponse
@@ -549,8 +596,9 @@ class AdminAuthController extends Controller
 
     private function activePosition(): ?ElectionPosition
     {
-        return ElectionPosition::query()->where('is_completed', false)->orderBy('id')->first()
-            ?? ElectionPosition::query()->orderBy('id')->first();
+        return ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
+            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first()
+            ?? ElectionPosition::query()->orderBy('sort_order')->orderBy('id')->first();
     }
 
     private function positionCandidates(?ElectionPosition $position)
@@ -562,6 +610,25 @@ class AdminAuthController extends Controller
             ->orderByDesc('votes_count')
             ->orderBy('candidate_name')
             ->get();
+    }
+
+    private function selectWinners($candidates, int $seats)
+    {
+        $positiveCandidates = $candidates->filter(
+            fn (CandidateSubmission $candidate): bool => $candidate->votes_count > 0
+        )->values();
+
+        if ($positiveCandidates->isEmpty()) {
+            return $positiveCandidates;
+        }
+
+        // A tie at the final winning place elects every tied candidate.
+        $cutoffCandidate = $positiveCandidates->get(max(0, $seats - 1));
+        $cutoffVotes = $cutoffCandidate?->votes_count;
+
+        return $positiveCandidates
+            ->filter(fn (CandidateSubmission $candidate): bool => $candidate->votes_count >= $cutoffVotes)
+            ->values();
     }
 
     private function positionBallotsCast(?ElectionPosition $position): int
@@ -583,10 +650,7 @@ class AdminAuthController extends Controller
     private function buildPositionResult(ElectionPosition $position): array
     {
         $candidates = $this->positionCandidates($position);
-        $winners = $candidates
-            ->filter(fn (CandidateSubmission $candidate): bool => $candidate->votes_count > 0)
-            ->take($position->seats)
-            ->values();
+        $winners = $this->selectWinners($candidates, $position->seats);
 
         return [
             'position' => $position,

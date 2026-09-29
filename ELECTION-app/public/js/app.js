@@ -17,6 +17,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 200);
     };
 
+    const showStageClosedError = (modal, message) => {
+        if (!modal) return;
+        let error = modal.querySelector('.modal-live-error');
+        if (!error) {
+            error = document.createElement('div');
+            error.className = 'modal-live-error mx-4 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700';
+            modal.querySelector('.modal-form')?.before(error);
+        }
+        error.textContent = message;
+        modal.querySelectorAll('.modal-form input, .modal-form button[type="submit"]').forEach((element) => { element.disabled = true; });
+    };
+
     document.querySelectorAll('.modal-open').forEach((button) => {
         button.addEventListener('click', () => {
             const modal = document.getElementById(button.dataset.modal);
@@ -44,6 +56,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ballotInputs = document.querySelectorAll('input[name="presidential_ballot"]');
     const submitBallotButton = document.getElementById('submit-ballot-btn');
+    let ballotCountdownTimer = null;
+    const startBallotCountdown = (seconds) => {
+        const counter = document.getElementById('ballot-countdown');
+        if (!counter) return;
+        document.getElementById('ballot-countdown-wrap')?.classList.remove('hidden');
+        window.clearInterval(ballotCountdownTimer);
+        let remaining = Math.min(60, Math.max(0, Math.floor(Number(seconds) || 0)));
+        counter.textContent = String(remaining);
+        const expireBallot = async () => {
+            try {
+                await fetch(window.ballotCloseUrl, { method: 'POST', headers: { 'X-CSRF-TOKEN': window.voteCsrfToken || '', Accept: 'application/json' }, credentials: 'same-origin' });
+            } finally {
+                window.location.replace(window.resultsUrl || '/results');
+            }
+        };
+        if (remaining <= 0) {
+            expireBallot();
+            return;
+        }
+        ballotCountdownTimer = window.setInterval(() => {
+            remaining -= 1;
+            counter.textContent = String(Math.max(remaining, 0));
+            if (remaining <= 0) {
+                window.clearInterval(ballotCountdownTimer);
+                expireBallot();
+            }
+        }, 1000);
+    };
+    if (window.ballotRemainingSeconds > 0) startBallotCountdown(window.ballotRemainingSeconds);
 
     const updateBallotSelection = () => {
         let selected = false;
@@ -337,6 +378,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.electionDataUrl) {
         let lastUpdatedAt = null;
         let lastPositionSignature = null;
+        let lastPositionStates = new Map();
+        let lastBallotSubmissionSignature = null;
         const updateOverviewTimeline = (position, submissions = [], positions = []) => {
             const timeline = document.getElementById('election-timeline');
             if (!timeline) return;
@@ -358,11 +401,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('overview-voter-access')?.classList.toggle('hidden', allPositionsComplete);
             document.getElementById('overview-complete-actions')?.classList.toggle('hidden', !allPositionsComplete);
             document.querySelectorAll('#overview-active-actions button[data-modal]').forEach((button) => {
-                const locked = noPositions;
+                const isCandidacy = button.dataset.modal === 'modal-candidacy';
+                const locked = noPositions || (isCandidacy ? !position?.candidacy_open : !position?.nomination_open);
                 button.disabled = locked;
                 const label = button.querySelector('[data-action-label]');
                 const icon = button.querySelector('[data-action-icon]');
-                const isCandidacy = button.dataset.modal === 'modal-candidacy';
                 if (label) label.textContent = locked ? (isCandidacy ? 'Candidacy locked' : 'Nomination locked') : (isCandidacy ? 'File candidacy' : 'Submit nomination');
                 if (icon) icon.textContent = locked ? 'lock' : 'arrow_forward';
             });
@@ -385,14 +428,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (noPositions) {
                 window.electionPosition = null;
                 if (overviewName) overviewName.textContent = 'Election position';
-                if (overviewStatus) overviewStatus.innerHTML = '<span class="material-symbols-outlined text-lg">lock_open</span>Candidacy & nomination open';
+                if (overviewStatus) overviewStatus.innerHTML = '<span class="material-symbols-outlined text-lg">lock_open</span>Election controls locked';
             } else if (allPositionsComplete) {
                 if (overviewName) overviewName.textContent = 'Election complete';
                 if (overviewStatus) overviewStatus.innerHTML = '<span class="material-symbols-outlined text-lg">verified</span>All ballot positions completed';
             } else if (position) {
                 window.electionPosition = position;
                 if (overviewName) overviewName.textContent = position.name;
-                if (overviewStatus) overviewStatus.innerHTML = `<span class="material-symbols-outlined text-lg">${position.is_closed ? 'event_busy' : 'lock_open'}</span>${position.is_closed ? 'Voting closed' : 'Candidacy & nomination open'}`;
+                if (overviewStatus) overviewStatus.innerHTML = `<span class="material-symbols-outlined text-lg">${position.is_closed ? 'event_busy' : (position.is_unlocked ? 'how_to_vote' : 'lock_open')}</span>${position.is_closed ? 'Voting closed' : (position.is_unlocked ? 'Voting open' : 'Waiting for administrator to start')}`;
             }
 
             timeline.querySelectorAll('.timeline-step').forEach((step) => {
@@ -431,7 +474,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(window.electionDataUrl, { headers: { Accept: 'application/json' }, cache: 'no-store' });
                 if (!response.ok) return;
                 const data = await response.json();
-                const positionSignature = JSON.stringify((data.positions || []).map((candidatePosition) => [candidatePosition.id, candidatePosition.updated_at, candidatePosition.is_completed, candidatePosition.is_closed]));
+                const positionSignature = JSON.stringify((data.positions || []).map((candidatePosition) => [candidatePosition.id, candidatePosition.updated_at, candidatePosition.unlocked_at, candidatePosition.is_unlocked, candidatePosition.is_completed, candidatePosition.is_closed, candidatePosition.candidacy_open, candidatePosition.nomination_open]));
+                const currentPositionStates = new Map((data.positions || []).map((candidatePosition) => [Number(candidatePosition.id), candidatePosition]));
+                const openModal = document.querySelector('.modal.flex');
+                const modalPosition = data.active_position;
+                const previousModalPosition = modalPosition ? lastPositionStates.get(Number(modalPosition.id)) : null;
+                if (openModal && previousModalPosition && modalPosition && Number(modalPosition.id) === Number(previousModalPosition.id)) {
+                    if (openModal.id === 'modal-candidacy' && previousModalPosition.candidacy_open && !modalPosition.candidacy_open) {
+                        showStageClosedError(openModal, 'Candidacy was closed by the administrator. Your submission was not accepted.');
+                    }
+                    if (openModal.id === 'modal-nomination' && previousModalPosition.nomination_open && !modalPosition.nomination_open) {
+                        showStageClosedError(openModal, 'Nominations were closed by the administrator. Your submission was not accepted.');
+                    }
+                }
+                lastPositionStates = currentPositionStates;
+                const ballotSubmissionSignature = JSON.stringify((data.submissions || []).map((submission) => [submission.id, submission.position_id, submission.candidate_name, submission.status, submission.updated_at]));
                 const isOverview = document.body.classList.contains('home-page');
                 if (isOverview && lastPositionSignature !== null && positionSignature !== lastPositionSignature && canRefresh()) {
                     window.location.reload();
@@ -442,10 +499,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 const revision = `${data.latest_updated_at || ''}|${data.latest_submission_updated_at || ''}`;
                 if (lastUpdatedAt === null) {
                     lastUpdatedAt = revision;
+                    lastBallotSubmissionSignature = ballotSubmissionSignature;
                     return;
                 }
                 const currentPositionId = Number(window.electionPosition?.id || 0);
                 const activePosition = data.active_position;
+                const isBallotMarking = document.title.includes('Ballot Marking');
+                const isReviewVote = document.title.includes('Review Your Vote');
+                const ballotSubmissionsChanged = lastBallotSubmissionSignature !== null
+                    && ballotSubmissionSignature !== lastBallotSubmissionSignature;
+                const ballotRefreshBlocked = isBallotMarking && ballotSubmissionsChanged && !canRefresh();
+                if (isBallotMarking
+                    && ballotSubmissionsChanged
+                    && activePosition
+                    && Number(activePosition.id) === currentPositionId
+                    && canRefresh()) {
+                    // Candidate approvals and nominations are returned by the same
+                    // live endpoint, but the ballot roster was server-rendered only.
+                    // Reloading here gives the open ballot tab the same live behavior
+                    // as the overview and results screens without discarding a choice.
+                    window.location.reload();
+                    return;
+                }
                 if (activePosition && Number(activePosition.id) !== currentPositionId && !document.title.includes('Ballot Marking')) {
                     window.electionPosition = activePosition;
                     const positionName = document.getElementById('current-position-name');
@@ -459,7 +534,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const lockStateChanged = livePosition
                     && (Boolean(livePosition.is_unlocked) !== Boolean(window.electionPosition?.is_unlocked)
                         || Boolean(livePosition.is_closed) !== Boolean(window.electionPosition?.is_closed));
-                if (revision !== lastUpdatedAt && lockStateChanged) {
+                // Lock state is authoritative and must be applied even when the
+                // timestamp revision is unchanged within the same second.
+                if (lockStateChanged) {
                     window.electionPosition = { ...window.electionPosition, ...livePosition };
                     const positionStatus = document.getElementById('current-position-status');
                     if (positionStatus) positionStatus.innerHTML = `<span class="material-symbols-outlined text-lg">${livePosition.is_closed ? 'event_busy' : 'lock_open'}</span>${livePosition.is_closed ? 'Voting closed' : 'Candidacy & nomination open'}`;
@@ -467,12 +544,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         document.getElementById('ballot-lock-overlay')?.remove();
                         document.querySelectorAll('#ballot-form input').forEach((element) => { element.disabled = false; });
                         submitBallotButton?.toggleAttribute('disabled', !document.querySelector('#ballot-form input:checked'));
+                        startBallotCountdown(livePosition.remaining_seconds || 60);
                     } else {
                         const existingOverlay = document.getElementById('ballot-lock-overlay');
-                        if (!existingOverlay && document.title.includes('Ballot Marking')) {
-                            document.body.insertAdjacentHTML('beforeend', `<div class="fixed inset-x-0 bottom-0 top-20 z-30 flex items-center justify-center bg-slate-900/45 px-5 backdrop-blur-sm" id="ballot-lock-overlay"><div class="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl"><span class="material-symbols-outlined text-5xl text-[#115cb9]">${livePosition.is_closed ? 'event_busy' : 'lock'}</span><h2 class="mt-4 font-display text-2xl font-bold">${livePosition.is_closed ? 'Voting closed' : 'Ballot locked'}</h2><p class="mt-2 text-sm leading-6 text-slate-600">${livePosition.is_closed ? 'Voting is closed. Your ballot is recorded as abstain.' : 'Please wait for the administrators to unlock this position before voting.'}</p>${livePosition.is_closed ? `<div class="mt-6 grid gap-3 sm:grid-cols-2"><a href="${window.homeUrl || '/home'}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-[#0b192c]">Back to overview</a><a href="${window.resultsUrl || '/results'}" class="inline-flex items-center justify-center rounded-xl bg-[#115cb9] px-4 py-3 text-sm font-bold text-white">Show results</a></div>` : ''}</div></div>`);
+                        if (!existingOverlay && (isBallotMarking || isReviewVote)) {
+                            const message = livePosition.is_closed ? 'Voting is closed. Your ballot cannot be submitted.' : 'The administrator locked voting before your ballot was submitted.';
+                            document.body.insertAdjacentHTML('beforeend', `<div class="fixed inset-x-0 bottom-0 top-20 z-30 flex items-center justify-center bg-slate-900/45 px-5 backdrop-blur-sm" id="ballot-lock-overlay"><div class="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl"><span class="material-symbols-outlined text-5xl text-[#115cb9]">${livePosition.is_closed ? 'event_busy' : 'lock'}</span><h2 class="mt-4 font-display text-2xl font-bold">Voting unavailable</h2><p class="mt-2 text-sm leading-6 text-slate-600">${message}</p><div class="mt-6 grid gap-3 sm:grid-cols-2"><a href="${window.homeUrl || '/home'}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-[#0b192c]">Back to overview</a><a href="${window.resultsUrl || '/results'}" class="inline-flex items-center justify-center rounded-xl bg-[#115cb9] px-4 py-3 text-sm font-bold text-white">Show results</a></div></div></div>`);
                         }
                         document.querySelectorAll('#ballot-form input, #submit-ballot-btn').forEach((element) => { element.disabled = true; });
+                        document.querySelectorAll('#review-vote-form input, #review-vote-form button, #review-vote-submit-form input, #submit-final-vote').forEach((element) => { element.disabled = true; });
                     }
                 } else if (revision !== lastUpdatedAt && canRefresh()) {
                     const activePosition = data.active_position;
@@ -481,12 +561,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 lastUpdatedAt = revision;
+                // Keep the previous signature while a voter has a selection or is
+                // editing the ballot, so the next safe poll still applies the update.
+                if (!ballotRefreshBlocked) lastBallotSubmissionSignature = ballotSubmissionSignature;
             } catch {
                 // A temporary connection failure should not interrupt the voter screen.
             }
         };
 
         pollElectionData();
-        window.setInterval(pollElectionData, 5000);
+        window.setInterval(pollElectionData, 1000);
     }
 });
