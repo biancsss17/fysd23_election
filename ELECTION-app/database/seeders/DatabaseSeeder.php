@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AdminUser;
+use App\Models\ElectionPosition;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -24,5 +25,30 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ],
         );
+
+        foreach ([
+            'President',
+            'Vice President',
+            'Secretary',
+            'Assist Sec',
+            'Treasurer',
+            'Auditor',
+        ] as $index => $name) {
+            ElectionPosition::firstOrCreate(
+                ['name' => $name],
+                [
+                    'sort_order' => $index + 1,
+                    'seats' => 1,
+                    'rule' => 'single',
+                    'allow_abstain' => true,
+                    'max_selections' => 1,
+                    'is_completed' => false,
+                    'is_unlocked' => false,
+                    'is_closed' => false,
+                    'candidacy_open' => false,
+                    'nomination_open' => false,
+                ],
+            );
+        }
     }
 }
