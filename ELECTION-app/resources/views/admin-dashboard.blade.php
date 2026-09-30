@@ -132,12 +132,6 @@
                     <input id="archive-name" name="archive_name" type="text" maxlength="255" value="" class="rounded border border-red-300 bg-white px-3 py-2 text-sm text-[#111c2d] outline-none focus:border-red-700 focus:ring-2 focus:ring-red-200" required>
                     <button type="submit" class="rounded bg-red-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-900">RESET ELECTION</button>
                 </form>
-                <form method="POST" action="{{ route('admin.dashboard.purge-election') }}" onsubmit="return confirm('PERMANENTLY DELETE ALL election data and saved reset archives? The administrator account will be preserved.');" class="flex flex-col gap-2 sm:min-w-80">
-                    @csrf
-                    <span class="text-xs font-bold uppercase tracking-wide text-red-800">Permanent cleanup</span>
-                    <span class="text-xs text-red-800">Keeps the administrator email and password.</span>
-                    <button type="submit" class="rounded border border-red-700 bg-white px-5 py-3 text-sm font-bold text-red-800 transition hover:bg-red-100">DELETE ALL DATA · KEEP ADMIN</button>
-                </form>
             </div>
         </section>
     </div></main>

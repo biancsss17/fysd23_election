@@ -107,12 +107,7 @@
             }
 
             if (positions.length === 0) {
-            sequence.innerHTML = `
-                <div class="flex min-h-[260px] flex-col items-center justify-center text-center">
-                    <span class="material-symbols-outlined text-5xl text-[#9aa3b2]">format_list_numbered</span>
-                    <h2 class="mt-4 font-[Outfit] text-2xl font-bold">No ballot sequence yet</h2>
-                    <p class="mt-2 max-w-sm text-sm text-[#44474c]">Create a position to begin building the election sequence.</p>
-                </div>`;
+                sequence.innerHTML = '';
             } else {
                 const nextIndex = positions.findIndex((position) => !position.is_completed && !position.is_closed);
                     sequence.innerHTML = `
