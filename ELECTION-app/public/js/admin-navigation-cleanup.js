@@ -165,6 +165,14 @@ window.refreshLivePage = window.refreshLivePage || (() => {
 
             const documentText = await response.text();
             const nextDocument = new DOMParser().parseFromString(documentText, 'text/html');
+
+            // Also guard against a login response returned with the current URL.
+            // The login form is standalone and must never be mounted inside the old admin page.
+            if (nextDocument.querySelector('#admin-login-form') && !nextDocument.querySelector('body > header')) {
+                window.location.assign(response.url || window.location.href);
+                return;
+            }
+
             const currentMain = document.querySelector('main');
             const nextMain = nextDocument.querySelector('main');
             if (currentMain && nextMain && currentMain.innerHTML !== nextMain.innerHTML) {
