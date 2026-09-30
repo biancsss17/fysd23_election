@@ -6,7 +6,10 @@
         body > header .standard-admin-title { font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -.01em; text-transform: uppercase; }
         body > aside { top: 80px; width: 16rem; }
         body > aside nav { display: flex; flex-direction: column; gap: .25rem; padding: 0 .5rem; }
-        body > aside nav a { display: flex; align-items: center; gap: .75rem; border-radius: .25rem; padding: .75rem 1rem; font-size: 1rem; line-height: 1.25; }
+        body > aside nav a { display: flex !important; align-items: center !important; gap: .75rem !important; border-radius: .25rem !important; padding: .75rem 1rem !important; font-size: 1rem !important; line-height: 1.25 !important; color: #263143 !important; text-decoration: none !important; transition: background-color .15s ease, color .15s ease !important; }
+        body > aside nav a:hover { background: #dee8ff !important; color: #111c2d !important; }
+        body > aside nav a[aria-current="page"], body > aside nav a.active { border-left: 4px solid #ffdf98 !important; background: #dee8ff !important; color: #115cb9 !important; padding-left: .75rem !important; font-weight: 700 !important; }
+        body > aside nav a .material-symbols-outlined { flex: 0 0 auto; font-size: 22px !important; line-height: 1 !important; }
         body > main { margin-left: 0; padding-top: 6rem; padding-left: 18rem; padding-right: 2rem; }
     }
     @media screen and (max-width: 1023px) {
