@@ -75,24 +75,35 @@ document.addEventListener('DOMContentLoaded', () => {
         responsiveStyles.textContent = `
             .mobile-admin-nav { display:none; }
             @media (max-width: 1023px) {
-                html, body { min-height:100%; overflow-x:auto !important; overflow-y:auto !important; }
+                html, body { min-height:100%; overflow-x:hidden !important; overflow-y:auto !important; }
                 body { padding-bottom: 4.75rem !important; }
                 .mobile-admin-nav { position:fixed; inset:auto 0 0; z-index:60; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.25rem; padding:.45rem .5rem calc(.45rem + env(safe-area-inset-bottom)); background:#0e1c2f; box-shadow:0 -2px 12px rgba(0,0,0,.18); }
                 .mobile-admin-nav a { min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.15rem; min-height:3.2rem; border-radius:.5rem; color:#d8e3fb; font-size:.68rem; line-height:1; text-decoration:none; }
                 .mobile-admin-nav a:hover, .mobile-admin-nav a:focus-visible { background:#1d3557; color:#fff; outline:none; }
                 .mobile-admin-nav .material-symbols-outlined { font-size:1.3rem; }
-                body > header { height:auto !important; min-height:4rem; }
-                body > header > div { min-height:4rem; height:auto !important; padding:.5rem .75rem !important; }
+                body > header { height:auto !important; min-height:5rem; }
+                body > header > div { min-height:5rem; height:auto !important; padding:.65rem .75rem !important; align-items:center; }
+                body > header > div > div:first-child { min-width:0; flex:1 1 auto; }
                 .standard-admin-logo { width:44px !important; height:44px !important; }
-                .standard-admin-title { display:block !important; min-width:0 !important; max-width:calc(100vw - 5.5rem); overflow:visible !important; overflow-wrap:anywhere; text-overflow:clip !important; white-space:normal !important; font-size:clamp(.68rem,2.8vw,.95rem) !important; line-height:1.15 !important; }
-                body > header form, body > header > div > div:last-child > span { display:none !important; }
+                .standard-admin-title { display:block !important; min-width:0 !important; max-width:none; overflow-wrap:anywhere; text-overflow:clip !important; white-space:normal !important; font-size:clamp(.72rem,3.9vw,1.1rem) !important; line-height:1.12 !important; }
+                body > header form { display:block !important; }
+                body > header form button { padding:.55rem .65rem !important; font-size:.7rem !important; white-space:nowrap; }
+                body > header > div > div:last-child > span { display:none !important; }
                 aside { display:none !important; }
-                main { margin-left:0 !important; padding-left:1rem !important; padding-right:1rem !important; min-width:0; width:100%; overflow:visible; }
+                main { margin-left:0 !important; padding-left:1rem !important; padding-right:1rem !important; min-width:0; width:100%; max-width:100%; overflow:visible; overflow-wrap:anywhere; }
+                main > div, main section, main article { max-width:100%; min-width:0; }
+                main h1 { font-size:clamp(1.35rem,6vw,2rem) !important; line-height:1.15; }
+                main h2 { font-size:clamp(1.15rem,5vw,1.5rem) !important; line-height:1.2; }
+                main table { max-width:none; }
             }
             @media (max-width: 480px) {
                 .mobile-admin-nav a { font-size:.6rem; }
                 .mobile-admin-nav .material-symbols-outlined { font-size:1.15rem; }
                 main { padding-left:.75rem !important; padding-right:.75rem !important; }
+                body > header > div { gap:.5rem; }
+                .standard-admin-logo { width:40px !important; height:40px !important; }
+                .standard-admin-title { font-size:clamp(.66rem,3.7vw,.9rem) !important; }
+                body > header form button { padding:.45rem .5rem !important; font-size:.62rem !important; }
             }
         `;
         document.head.appendChild(responsiveStyles);
