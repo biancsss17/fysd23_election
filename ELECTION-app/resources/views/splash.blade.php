@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/splash.css?v={{ filemtime(public_path('css/splash.css')) }}">
-    <script src="/js/splash.js" defer></script>
+    <script src="/js/splash.js?v={{ filemtime(public_path('js/splash.js')) }}" defer></script>
 </head>
 <body class="splash" data-home-url="/home">
     <main class="splash-stage" aria-labelledby="election-title">
