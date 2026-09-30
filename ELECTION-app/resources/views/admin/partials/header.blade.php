@@ -18,5 +18,5 @@
             credentials: 'same-origin',
             headers: { Accept: 'application/json' },
         }).catch(() => {});
-    }, 10 * 60 * 1000);
+    }, 5 * 60 * 1000);
 </script>
