@@ -221,18 +221,6 @@ class HomeController extends Controller
     }
 
     /**
-     * Handle the future AI generation form.
-     */
-    public function generate(Request $request): string
-    {
-        $request->validate([
-            'business_type' => ['required', 'string', 'max:255'],
-        ]);
-
-        return 'Generated successfully';
-    }
-
-    /**
      * Confirm that the submitted email belongs to an active registered voter.
      */
     public function verifyVoterEmail(Request $request): RedirectResponse

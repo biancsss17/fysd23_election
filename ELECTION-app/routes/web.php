@@ -60,4 +60,3 @@ Route::get('/admin/audit-log', [AdminAuthController::class, 'auditLog'])->middle
 Route::get('/admin/audit-log/{auditLog}', [AdminAuthController::class, 'auditLogShow'])->middleware('admin.auth')->name('admin.audit-log.show');
 Route::post('/admin/audit-log/{auditLog}/restore', [AdminAuthController::class, 'restoreAuditLog'])->middleware('admin.auth')->name('admin.audit-log.restore');
 Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->middleware('admin.auth')->name('admin.logout');
-Route::post('/generate', [HomeController::class, 'generate'])->name('generate');
