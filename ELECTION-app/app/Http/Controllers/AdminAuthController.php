@@ -134,6 +134,19 @@ class AdminAuthController extends Controller
         return redirect()->route('admin.dashboard')->with('election_reset', 'Election reset successfully.');
     }
 
+    public function purgeElection(): RedirectResponse
+    {
+        DB::transaction(function (): void {
+            ElectionVote::query()->delete();
+            CandidateSubmission::query()->delete();
+            ElectionPosition::query()->delete();
+            RegisteredVoter::query()->delete();
+            AuditLog::query()->delete();
+        });
+
+        return redirect()->route('admin.dashboard')->with('election_reset', 'All election data and saved reset archives were deleted. Administrator access was preserved.');
+    }
+
     public function restoreAuditLog(AuditLog $auditLog): RedirectResponse
     {
         $snapshot = $auditLog->results['snapshot'] ?? null;

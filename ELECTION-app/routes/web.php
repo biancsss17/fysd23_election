@@ -34,6 +34,7 @@ Route::get('/admin/session/keepalive', function () {
 })->middleware('admin.auth')->name('admin.session.keepalive');
 Route::get('/admin/dashboard', [AdminAuthController::class, 'dashboard'])->middleware('admin.auth')->name('admin.dashboard');
 Route::post('/admin/dashboard/reset-election', [AdminAuthController::class, 'resetElection'])->middleware('admin.auth')->name('admin.dashboard.reset-election');
+Route::post('/admin/dashboard/purge-election', [AdminAuthController::class, 'purgeElection'])->middleware('admin.auth')->name('admin.dashboard.purge-election');
 Route::get('/admin/voter-management', [AdminAuthController::class, 'voterManagement'])->middleware('admin.auth')->name('admin.voter-management');
 Route::get('/admin/voter-management/data', [AdminAuthController::class, 'voterManagementData'])->middleware('admin.auth')->name('admin.voter-management.data');
 Route::post('/admin/voter-management', [AdminAuthController::class, 'storeVoter'])->middleware('admin.auth')->name('admin.voter-management.store');
