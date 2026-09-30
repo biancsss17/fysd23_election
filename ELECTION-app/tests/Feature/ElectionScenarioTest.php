@@ -61,7 +61,11 @@ class ElectionScenarioTest extends TestCase
 
     public function test_empty_election_locks_public_actions(): void
     {
-        $this->get(route('home'))->assertOk()->assertSee('Election position');
+        $this->get(route('home'))->assertRedirect(route('splash'));
+        $this->withSession(['splash_passed' => true])
+            ->get(route('home'))
+            ->assertOk()
+            ->assertSee('Election position');
         $this->get(route('voter-access'))->assertOk();
         $this->get(route('ballot'))
             ->assertOk()

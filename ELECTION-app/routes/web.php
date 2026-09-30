@@ -2,9 +2,14 @@
 
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\HomeController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'splash')->name('splash');
+Route::get('/', function (Request $request) {
+    $request->session()->put('splash_passed', true);
+
+    return view('splash');
+})->name('splash');
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 Route::get('/voter-access', [HomeController::class, 'voterAccess'])->name('voter-access');
 Route::post('/voter-access/verify', [HomeController::class, 'verifyVoterAccess'])->name('voter-access.verify');
