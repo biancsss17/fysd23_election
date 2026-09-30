@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[character]);
-
     const adminHeader = document.querySelector('body > header');
     if (adminHeader) {
         const logo = adminHeader.querySelector('img');
@@ -15,25 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const headerStyles = document.createElement('style');
         headerStyles.textContent = '.standard-admin-logo{width:56px!important;height:56px!important;border-radius:9999px!important}.standard-admin-title{font-size:24px!important;line-height:1.15!important;font-weight:700!important;letter-spacing:-.01em!important;text-transform:uppercase!important}body>header{height:80px!important}body>header>div{height:80px!important;min-height:80px!important}aside{top:80px!important;width:16rem!important}body>main,body>div>main{padding-top:6rem!important}@media (min-width:1024px){body>main,body>div>main{margin-left:0!important;padding-left:18rem!important;padding-right:2rem!important}}';
         document.head.appendChild(headerStyles);
-    }
-
-    if (Array.isArray(window.adminSubmissions)) {
-        const tableBody = document.getElementById('nominations-table-body');
-        if (tableBody) {
-            tableBody.innerHTML = window.adminSubmissions.length
-                ? window.adminSubmissions.map((submission) => `<tr class="hover:bg-surface-container-low transition-colors"><td class="py-space-md px-space-lg text-center"><div class="flex items-center justify-center gap-space-sm"><span class="material-symbols-outlined text-secondary text-[20px]">badge</span><div><div class="font-headline-sm text-headline-sm text-primary-container">${escapeHtml(submission.candidate_name)}</div><div class="font-body-sm text-body-sm text-on-surface-variant">${escapeHtml(submission.submitted_by_email)}</div></div></div></td><td class="py-space-md px-space-md text-center">${escapeHtml(submission.submission_type)}</td><td class="py-space-md px-space-lg text-center"><span class="rounded bg-tertiary-fixed px-space-sm py-1 font-label-md text-label-md">${escapeHtml(submission.status)}</span></td></tr>`).join('')
-                : '<tr><td colspan="3" class="py-10 text-center text-on-surface-variant">No candidacy or nomination submissions yet.</td></tr>';
-        }
-
-        const finalBallotSection = Array.from(document.querySelectorAll('main section')).find((section) =>
-            section.querySelector('h2')?.textContent.includes('FINAL BALLOT')
-        );
-        const finalBallotGrid = finalBallotSection?.querySelector('.grid');
-        if (finalBallotGrid) {
-            finalBallotGrid.innerHTML = window.adminSubmissions.length
-                ? window.adminSubmissions.map((submission, index) => `<div class="p-space-md bg-surface-container-low rounded-lg flex flex-col justify-between space-y-space-md hover:shadow-sm transition-shadow"><div class="flex items-start justify-between"><div class="space-y-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Ballot Slot #${String(index + 1).padStart(2, '0')}</span><div class="font-headline-md text-headline-md text-primary-container">${escapeHtml(submission.candidate_name)}</div><div class="font-body-sm text-body-sm text-on-surface-variant">${escapeHtml(submission.submission_type)}</div></div><div class="w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-bold">✓</div></div><div class="pt-space-sm text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-secondary">check_circle</span>${escapeHtml(submission.status)}</div></div>`).join('')
-                : '<div class="col-span-full rounded-lg border border-dashed border-surface-container-high p-space-lg text-center text-on-surface-variant">No candidates are currently listed for the final ballot.</div>';
-        }
     }
 
     const adminNav = document.querySelector('aside nav');
