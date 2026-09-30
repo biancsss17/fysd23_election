@@ -59,6 +59,19 @@ class ElectionScenarioTest extends TestCase
         ]);
     }
 
+    public function test_splash_links_to_about_page_with_project_description(): void
+    {
+        $this->get(route('splash'))
+            ->assertOk()
+            ->assertSee('About this election system')
+            ->assertSee(route('about'));
+
+        $this->get(route('about'))
+            ->assertOk()
+            ->assertSee('A simple project by the FYS District 23 Secretary, Hmna. Bianca Vanessa F. Salada')
+            ->assertSee('Continue to election');
+    }
+
     public function test_empty_election_locks_public_actions(): void
     {
         $this->get(route('home'))

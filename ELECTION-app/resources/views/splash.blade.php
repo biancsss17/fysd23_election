@@ -34,7 +34,10 @@
         </section>
         <footer class="splash-footer">
             <div class="splash-progress" aria-hidden="true"><span></span></div>
-            <a class="splash-skip" href="/home">Continue <span aria-hidden="true">→</span></a>
+            <div class="splash-links">
+                <a class="splash-about-link" href="{{ route('about') }}">About this election system</a>
+                <a class="splash-skip" href="/home">Continue <span aria-hidden="true">→</span></a>
+            </div>
             <noscript><p>Select Continue to enter.</p></noscript>
         </footer>
     </main>
