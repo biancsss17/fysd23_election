@@ -44,7 +44,7 @@ class AdminAuthController extends Controller
 
         $request->session()->regenerate();
         config([
-            'session.lifetime' => (int) env('ADMIN_SESSION_LIFETIME', 5256000),
+            'session.lifetime' => config('session.admin_lifetime'),
             'session.expire_on_close' => false,
         ]);
         $request->session()->put([

@@ -17,7 +17,7 @@ class EnsureAdminAuthenticated
     {
         // Keep administrator sessions persistent until the explicit Sign Out action.
         config([
-            'session.lifetime' => (int) env('ADMIN_SESSION_LIFETIME', 5256000),
+            'session.lifetime' => config('session.admin_lifetime'),
             'session.expire_on_close' => false,
         ]);
 

@@ -40,6 +40,9 @@ class AdminAuthenticationTest extends TestCase
             'password' => 'secret-password',
         ])->assertRedirect(route('admin.dashboard'));
 
+        $this->assertSame(5256000, config('session.lifetime'));
+        $this->assertFalse(config('session.expire_on_close'));
+
         $this->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('District 23 FYS Election Overview');

@@ -34,6 +34,9 @@ return [
 
     'lifetime' => (int) env('SESSION_LIFETIME', 1440),
 
+    // Administrator sessions end only when the administrator signs out.
+    'admin_lifetime' => 5256000,
+
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 
     /*
