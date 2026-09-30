@@ -18,26 +18,9 @@
     </script>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
 </head>
-<body class="min-h-screen bg-[#f9f9ff] font-sans text-[#111c2d] antialiased">
-    <header class="fixed inset-x-0 top-0 z-50 h-20 bg-[#0e1c2f] shadow-lg">
-        <div class="flex h-20 items-center px-4 sm:px-6">
-            <img src="{{ asset('images/uecfi-logo.png') }}" alt="UECFI logo" class="standard-admin-logo h-14 w-14 shrink-0 rounded-full object-contain">
-            <div class="standard-admin-title ml-3 truncate text-[24px] font-bold uppercase leading-[1.15] tracking-tight text-white">DISTRICT 23 FYS - ELECTION OF OFFICERS FOR 2027–2030</div>
-        </div>
-    </header>
-    <aside class="fixed bottom-0 left-0 top-20 z-40 hidden w-64 bg-[#f0f3ff] py-6 lg:flex lg:flex-col">
-        <div class="px-6 pb-4 text-[11px] font-bold uppercase tracking-wider text-[#44474c]">Navigation</div>
-        <nav class="flex flex-col gap-1 px-2">
-            <a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff] hover:text-[#111c2d]" href="{{ route('admin.login') }}"><span class="material-symbols-outlined text-xl">dashboard</span>Dashboard</a>
-            <a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff] hover:text-[#111c2d]" href="{{ route('admin.login') }}"><span class="material-symbols-outlined text-xl">badge</span>Voter Management</a>
-            <a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff] hover:text-[#111c2d]" href="{{ route('admin.login') }}"><span class="material-symbols-outlined text-xl">work</span>Position Management</a>
-            <a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff] hover:text-[#111c2d]" href="{{ route('admin.login') }}"><span class="material-symbols-outlined text-xl">description</span>Results &amp; Document Preview</a>
-            <a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff] hover:text-[#111c2d]" href="{{ route('admin.login') }}"><span class="material-symbols-outlined text-xl">history_edu</span>Audit Log</a>
-        </nav>
-    </aside>
-    <main class="min-h-screen bg-[#f9f9ff] px-4 pb-10 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
-        <div class="mx-auto flex w-full max-w-[840px] flex-col">
-            <div class="relative flex w-full flex-col">
+<body class="flex min-h-screen items-center justify-center bg-[#f9f9ff] font-sans text-[#111c2d] antialiased">
+    <main class="flex min-h-screen w-full items-center justify-center bg-[#f9f9ff] px-4 py-8 sm:px-6">
+        <div class="relative flex w-full max-w-2xl flex-col">
             <div class="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-blue-500/5 blur-3xl"></div>
             <div class="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-amber-300/20 blur-3xl"></div>
             <div class="relative z-10 flex w-full flex-col gap-6 sm:gap-8">
@@ -57,7 +40,6 @@
                     </form>
                     <a href="{{ route('splash') }}" class="mt-5 block text-center text-sm font-semibold text-secondary transition hover:underline">Go to voter page</a>
                 </section>
-            </div>
             </div>
         </div>
     </main>
