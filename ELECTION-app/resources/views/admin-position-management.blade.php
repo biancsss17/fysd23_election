@@ -96,15 +96,6 @@
         if (sequence) {
             const positions = @json($positions);
             if (positionInput) positionInput.value = @json($nextPositionName);
-                const activePosition = positions.find((position) => !position.is_completed && !position.is_closed);
-            if (activePosition && !activePosition.is_unlocked && createPanel) {
-                const unlockForm = document.createElement('form');
-                unlockForm.method = 'POST';
-                unlockForm.action = `/admin/position-management/${activePosition.id}/unlock`;
-                unlockForm.className = 'mb-5';
-                unlockForm.innerHTML = `<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="PATCH"><button class="flex w-full items-center justify-center gap-2 rounded bg-[#115cb9] px-4 py-3 text-xs font-bold text-white transition hover:bg-[#0e1c2f]" type="submit"><span class="material-symbols-outlined text-lg">lock_open</span>UNLOCK CURRENT BALLOT</button><p class="mt-2 text-center text-[11px] text-[#75777d]">Voters are waiting for administrator approval.</p>`;
-                createPanel.prepend(unlockForm);
-            }
 
             if (positions.length === 0) {
                 sequence.innerHTML = '';
