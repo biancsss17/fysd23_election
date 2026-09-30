@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
             title.classList.add('standard-admin-title');
         }
         const headerStyles = document.createElement('style');
-        headerStyles.textContent = '.standard-admin-logo{width:56px!important;height:56px!important;border-radius:9999px!important}.standard-admin-title{font-size:24px!important;line-height:1.15!important;font-weight:700!important;letter-spacing:-.01em!important;text-transform:uppercase!important}body>header{height:80px!important}body>header>div{height:80px!important;min-height:80px!important}aside{top:80px!important}body>main,body>div>main{padding-top:6rem!important}';
+        headerStyles.textContent = '.standard-admin-logo{width:56px!important;height:56px!important;border-radius:9999px!important}.standard-admin-title{font-size:24px!important;line-height:1.15!important;font-weight:700!important;letter-spacing:-.01em!important;text-transform:uppercase!important}body>header{height:80px!important}body>header>div{height:80px!important;min-height:80px!important}aside{top:80px!important;width:16rem!important}body>main,body>div>main{padding-top:6rem!important}@media (min-width:1024px){body>main,body>div>main{margin-left:0!important;padding-left:18rem!important;padding-right:2rem!important}}';
         document.head.appendChild(headerStyles);
     }
 
@@ -51,7 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const link = adminNav.parentElement?.querySelector(`a[href$="${path}"]`) || document.querySelector(`aside a[href$="${path}"]`);
             const item = link || document.createElement('a');
             item.href = path;
-            item.className = 'flex items-center gap-3 rounded px-4 py-3 text-base text-[#263143] transition hover:bg-[#dee8ff] hover:text-[#111c2d]';
+            const isActive = window.location.pathname === path || (path !== '/admin/dashboard' && window.location.pathname.startsWith(`${path}/`));
+            item.className = isActive
+                ? 'flex items-center gap-3 rounded border-l-4 border-[#ffdf98] bg-[#dee8ff] px-4 py-3 pl-5 text-base font-bold text-[#115cb9] transition'
+                : 'flex items-center gap-3 rounded px-4 py-3 text-base text-[#263143] transition hover:bg-[#dee8ff] hover:text-[#111c2d]';
             item.removeAttribute('aria-current');
             item.innerHTML = `<span class="material-symbols-outlined text-[22px]">${icon}</span><span>${label}</span>`;
             return item;
