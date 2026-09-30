@@ -19,13 +19,13 @@
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
 </head>
 <body class="min-h-screen bg-[#f9f9ff] font-sans text-[#111c2d] antialiased">
-    <header class="fixed inset-x-0 top-0 z-50 h-16 bg-[#0e1c2f] shadow-lg">
-        <div class="flex h-full items-center px-4 sm:px-6">
-            <img src="{{ asset('images/uecfi-logo.png') }}" alt="UECFI logo" class="h-10 w-10 shrink-0 rounded-lg object-contain">
-            <div class="ml-3 truncate text-sm font-bold text-white sm:text-base">DISTRICT 23 FYS - ELECTION OF OFFICERS FOR 2027–2030</div>
+    <header class="fixed inset-x-0 top-0 z-50 h-20 bg-[#0e1c2f] shadow-lg">
+        <div class="flex h-20 items-center px-4 sm:px-6">
+            <img src="{{ asset('images/uecfi-logo.png') }}" alt="UECFI logo" class="standard-admin-logo h-14 w-14 shrink-0 rounded-full object-contain">
+            <div class="standard-admin-title ml-3 truncate text-[24px] font-bold uppercase leading-[1.15] tracking-tight text-white">DISTRICT 23 FYS - ELECTION OF OFFICERS FOR 2027–2030</div>
         </div>
     </header>
-    <aside class="fixed bottom-0 left-0 top-16 z-40 hidden w-64 bg-[#f0f3ff] py-6 lg:flex lg:flex-col">
+    <aside class="fixed bottom-0 left-0 top-20 z-40 hidden w-64 bg-[#f0f3ff] py-6 lg:flex lg:flex-col">
         <div class="px-6 pb-4 text-[11px] font-bold uppercase tracking-wider text-[#44474c]">Navigation</div>
         <nav class="flex flex-col gap-1 px-2">
             <a class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff] hover:text-[#111c2d]" href="{{ route('admin.login') }}"><span class="material-symbols-outlined text-xl">dashboard</span>Dashboard</a>

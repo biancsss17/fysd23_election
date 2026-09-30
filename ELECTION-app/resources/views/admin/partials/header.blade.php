@@ -1,8 +1,8 @@
-<header class="fixed inset-x-0 top-0 z-50 h-16 bg-[#0e1c2f] shadow-lg">
-    <div class="flex h-full items-center justify-between px-4 sm:px-6">
+<header class="fixed inset-x-0 top-0 z-50 h-20 bg-[#0e1c2f] shadow-lg">
+    <div class="flex h-20 items-center justify-between px-4 sm:px-6">
         <div class="flex min-w-0 items-center gap-3">
-            <img src="{{ asset('images/uecfi-logo.png') }}" alt="UECFI logo" class="h-10 w-10 shrink-0 rounded-lg object-contain">
-            <div class="truncate text-sm font-bold text-white sm:text-base">
+            <img src="{{ asset('images/uecfi-logo.png') }}" alt="UECFI logo" class="standard-admin-logo h-14 w-14 shrink-0 rounded-full object-contain">
+            <div class="standard-admin-title truncate text-[24px] font-bold uppercase leading-[1.15] tracking-tight text-white">
                 DISTRICT 23 FYS - ELECTION OF OFFICERS FOR 2027–2030
             </div>
         </div>

@@ -86,27 +86,7 @@
         positionForm?.addEventListener('input', () => positionForm.dataset.dirty = 'true');
         positionForm?.addEventListener('change', () => positionForm.dataset.dirty = 'true');
         const positionInput = document.querySelector('input[name="position_name"]');
-        const header = document.querySelector('main > div > section:first-child');
-        header?.querySelector('div.rounded-lg')?.remove();
-
-        const sequence = document.querySelector('main .grid > section:first-child');
-        const createPanel = document.querySelector('main .grid > section:last-child');
-        createPanel?.querySelector('span.rounded-full')?.remove();
-
-        if (sequence) {
-            const positions = @json($positions);
-            if (positionInput) positionInput.value = @json($nextPositionName);
-
-            if (positions.length === 0) {
-                sequence.innerHTML = '';
-            } else {
-                const nextIndex = positions.findIndex((position) => !position.is_completed && !position.is_closed);
-                    sequence.innerHTML = `
-                    <div class="mb-5 flex items-center justify-between"><div><h2 class="font-[Outfit] text-2xl font-bold">Ballot Sequence</h2><p class="mt-1 text-xs text-[#44474c]">Drag a position box onto another box, or click two boxes to swap their order.</p></div><span class="rounded-full bg-[#e7eeff] px-3 py-1 text-[11px] font-bold text-[#115cb9]">${positions.length} Position${positions.length === 1 ? '' : 's'}</span></div>
-                    <div class="space-y-2">${positions.map((position, index) => { const completed = Boolean(position.is_completed); const current = !completed && index === nextIndex; const label = completed ? 'COMPLETED' : (current ? 'CURRENT' : 'LOCKED'); const icon = completed ? 'check_circle' : (current ? 'arrow_forward' : 'lock'); const styling = current ? 'border-[#659dfe] bg-[#e7eeff]' : 'border-[#eef1fa] bg-[#f9f9ff]'; return `<div class="position-box touch-none flex items-center gap-3 rounded-lg border ${styling} p-3" data-position-id="${position.id}" draggable="true" role="button" tabindex="0" aria-label="Swap ${position.name} position"><span class="w-8 text-xs font-bold text-[#75777d]">${String(index + 1).padStart(2, '0')}</span><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><h3 class="font-[Outfit] text-sm font-bold sm:text-base">${position.name}</h3>${current ? '<span class="rounded-full bg-[#115cb9] px-2 py-0.5 text-[10px] font-bold text-white">CURRENT</span>' : ''}</div><p class="mt-0.5 text-xs text-[#44474c]">${position.seats} seat${position.seats === 1 ? '' : 's'} • ${position.rule === 'multi' ? 'Multi-seat' : 'Single seat'} • ${position.max_selections} maximum selection${position.max_selections === 1 ? '' : 's'}</p></div><span class="flex items-center gap-1 text-[10px] font-bold text-[#115cb9]"><span class="material-symbols-outlined text-base">${icon}</span><span class="hidden sm:inline">${label}</span></span></div>`; }).join('')}</div>`;
-            }
-        }
-
+        if (positionInput) positionInput.value = @json($nextPositionName);
         document.getElementById('seat-count')?.addEventListener('input', () => syncPositionConfig());
         document.getElementById('seat-count')?.addEventListener('change', () => syncPositionConfig());
         document.getElementById('max-selections')?.addEventListener('change', () => syncPositionConfig());

@@ -146,7 +146,7 @@ window.refreshLivePage = window.refreshLivePage || (() => {
             const nextDocument = new DOMParser().parseFromString(documentText, 'text/html');
             const currentMain = document.querySelector('main');
             const nextMain = nextDocument.querySelector('main');
-            if (currentMain && nextMain) {
+            if (currentMain && nextMain && currentMain.innerHTML !== nextMain.innerHTML) {
                 currentMain.replaceWith(nextMain);
                 document.dispatchEvent(new CustomEvent('admin-main-refreshed'));
             }
