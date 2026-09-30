@@ -123,7 +123,11 @@ h1 { margin: 0; font-family: Outfit, sans-serif; font-size: clamp(18px, 4.2vw, 2
 .about-back:focus-visible, .about-continue:focus-visible { outline: 2px solid #115cb9; outline-offset: 3px; }
 
 @media (min-width: 768px) {
-    body.splash:not(.about-page) .splash-center { max-width: 720px; }
+    body.splash:not(.about-page) .splash-center {
+        max-width: 720px;
+        margin-inline: auto;
+        transform: translateY(32px);
+    }
     body.splash:not(.about-page) .insignia { width: 220px; height: 220px; margin-bottom: 34px; }
     body.splash:not(.about-page) .district-label { margin-bottom: 12px; font-size: 22px; }
     body.splash:not(.about-page) h1 { font-size: clamp(32px, 4vw, 44px); }
