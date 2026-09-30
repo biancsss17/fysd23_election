@@ -18,6 +18,14 @@ class AdminAuthenticationTest extends TestCase
             ->assertRedirect(route('admin.login'));
     }
 
+    public function test_admin_login_voter_link_goes_to_splash(): void
+    {
+        $this->get(route('admin.login'))
+            ->assertOk()
+            ->assertSee('href="'.route('splash').'"', false)
+            ->assertSee('Go to voter page');
+    }
+
     public function test_admin_can_sign_in_and_access_dashboard(): void
     {
         AdminUser::create([

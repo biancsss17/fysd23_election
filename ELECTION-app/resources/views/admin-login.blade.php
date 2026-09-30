@@ -38,7 +38,7 @@
                         <label class="flex flex-col gap-1.5 text-sm font-semibold" for="admin-password"><span class="flex items-center justify-between">Supervisory Access Credential <span class="text-xs font-normal text-[#44474c]">Masked</span></span><span class="relative flex items-center"><span class="material-symbols-outlined pointer-events-none absolute left-3.5 text-xl text-[#44474c]">key</span><input class="h-11 w-full rounded-lg bg-surface-container-low pl-11 pr-11 text-sm outline-none shadow-sm transition-all focus:bg-white focus:ring-2 focus:ring-secondary/20" id="admin-password" name="password" placeholder="••••••••••••••••" required type="password"><button aria-label="Toggle password visibility" class="absolute right-3 flex items-center justify-center rounded p-1 text-[#44474c] transition hover:text-[#111c2d]" id="toggle-pwd-visibility" type="button"><span class="material-symbols-outlined text-xl" id="pwd-icon">visibility</span></button></span></label>
                         <button class="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary-container font-display text-lg tracking-wide text-white shadow-md transition hover:bg-secondary" id="signin-btn" type="submit"><span>SIGN IN</span><span class="material-symbols-outlined text-xl">lock_open</span></button>
                     </form>
-                    <a href="{{ route('home') }}" class="mt-5 block text-center text-sm font-semibold text-secondary transition hover:underline">Go to voter page</a>
+                    <a href="{{ route('splash') }}" class="mt-5 block text-center text-sm font-semibold text-secondary transition hover:underline">Go to voter page</a>
                 </section>
             </div>
         </div>
