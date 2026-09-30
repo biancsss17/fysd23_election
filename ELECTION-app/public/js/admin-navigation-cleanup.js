@@ -156,6 +156,13 @@ window.refreshLivePage = window.refreshLivePage || (() => {
             });
             if (!response.ok) return;
 
+            // Never inject the standalone login page into an authenticated admin shell.
+            // A full navigation removes the old header/sidebar as soon as the session ends.
+            if (new URL(response.url, window.location.href).pathname === '/admin/login') {
+                window.location.assign(response.url);
+                return;
+            }
+
             const documentText = await response.text();
             const nextDocument = new DOMParser().parseFromString(documentText, 'text/html');
             const currentMain = document.querySelector('main');
