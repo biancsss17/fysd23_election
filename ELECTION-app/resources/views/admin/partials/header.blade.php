@@ -12,3 +12,11 @@
         </form>
     </div>
 </header>
+<script>
+    window.setInterval(() => {
+        fetch('{{ route('admin.session.keepalive') }}', {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+        }).catch(() => {});
+    }, 10 * 60 * 1000);
+</script>

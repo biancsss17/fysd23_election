@@ -28,6 +28,9 @@ Route::post('/review-vote/submit', [HomeController::class, 'submitFinalVote'])->
 Route::get('/vote-receipt', [HomeController::class, 'voteReceipt'])->name('vote-receipt');
 Route::get('/admin/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
 Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
+Route::get('/admin/session/keepalive', function () {
+    return response()->json(['ok' => true]);
+})->middleware('admin.auth')->name('admin.session.keepalive');
 Route::get('/admin/dashboard', [AdminAuthController::class, 'dashboard'])->middleware('admin.auth')->name('admin.dashboard');
 Route::post('/admin/dashboard/reset-election', [AdminAuthController::class, 'resetElection'])->middleware('admin.auth')->name('admin.dashboard.reset-election');
 Route::get('/admin/voter-management', [AdminAuthController::class, 'voterManagement'])->middleware('admin.auth')->name('admin.voter-management');
