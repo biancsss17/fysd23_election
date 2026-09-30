@@ -89,7 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
         responsiveStyles.textContent = `
             .mobile-admin-nav { display:none; }
             @media (max-width: 1023px) {
-                body { padding-bottom: 4.75rem !important; overflow-x: hidden; }
+                html, body { min-height:100%; overflow-x:auto !important; overflow-y:auto !important; }
+                body { padding-bottom: 4.75rem !important; }
                 .mobile-admin-nav { position:fixed; inset:auto 0 0; z-index:60; display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:.25rem; padding:.45rem .5rem calc(.45rem + env(safe-area-inset-bottom)); background:#0e1c2f; box-shadow:0 -2px 12px rgba(0,0,0,.18); }
                 .mobile-admin-nav a { min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.15rem; min-height:3.2rem; border-radius:.5rem; color:#d8e3fb; font-size:.68rem; line-height:1; text-decoration:none; }
                 .mobile-admin-nav a:hover, .mobile-admin-nav a:focus-visible { background:#1d3557; color:#fff; outline:none; }
@@ -100,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .standard-admin-title { max-width:calc(100vw - 9rem); white-space:normal !important; font-size:clamp(.72rem,2.7vw,1rem) !important; line-height:1.15 !important; }
                 body > header form, body > header > div > div:last-child > span { display:none !important; }
                 aside { display:none !important; }
-                main { margin-left:0 !important; padding-left:1rem !important; padding-right:1rem !important; }
+                main { margin-left:0 !important; padding-left:1rem !important; padding-right:1rem !important; min-width:0; width:100%; overflow:visible; }
             }
             @media (max-width: 480px) {
                 .mobile-admin-nav a { font-size:.6rem; }
