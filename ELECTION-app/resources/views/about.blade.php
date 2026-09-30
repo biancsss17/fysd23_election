@@ -17,7 +17,7 @@
             <img class="about-logo" width="96" height="96" src="/images/uecfi-logo.png" alt="District 23 FYS Official Insignia">
             <p class="district-label">District 23 FYS</p>
             <h1 id="about-title">About this election system</h1>
-            <p class="about-copy">A simple project by the FYS District 23 Secretary, Hmna. Bianca Vanessa F. Salada, for the FYS of District 23. Since they cannot conduct the election face-to-face, this project provides a way for members to elect their future officers through a digital election system that aims to make the experience as similar as possible to an in-person election.</p>
+            <p class="about-copy">A simple gift project by the FYS District 23 Secretary, Hmna. Bianca Vanessa F. Salada, for the FYS of District 23. Since they cannot conduct the election face-to-face, this project provides a way for members to elect their future officers through a digital election system that aims to make the experience as similar as possible to an in-person election.</p>
             <div class="about-actions">
                 <a class="about-back" href="{{ route('splash') }}">Back to start</a>
                 <a class="about-continue" href="{{ route('home') }}">Continue to election <span aria-hidden="true">→</span></a>

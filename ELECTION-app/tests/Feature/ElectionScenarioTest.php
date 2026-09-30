@@ -68,7 +68,7 @@ class ElectionScenarioTest extends TestCase
 
         $this->get(route('about'))
             ->assertOk()
-            ->assertSee('A simple project by the FYS District 23 Secretary, Hmna. Bianca Vanessa F. Salada')
+            ->assertSee('A simple gift project by the FYS District 23 Secretary, Hmna. Bianca Vanessa F. Salada')
             ->assertSee('Continue to election');
     }
 
