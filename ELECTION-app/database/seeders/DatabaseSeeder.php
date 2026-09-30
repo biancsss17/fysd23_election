@@ -3,14 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\AdminUser;
-use App\Models\AuditLog;
-use App\Models\CandidateSubmission;
-use App\Models\ElectionVote;
-use App\Models\ElectionPosition;
-use App\Models\RegisteredVoter;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
@@ -31,55 +25,5 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        $encodedSnapshot = (string) env('ELECTION_SNAPSHOT_B64', '');
-        if ($encodedSnapshot === '') {
-            return;
-        }
-
-        $snapshot = json_decode(base64_decode($encodedSnapshot, true) ?: '', true);
-        if (! is_array($snapshot)) {
-            return;
-        }
-
-        DB::transaction(function () use ($snapshot): void {
-            ElectionVote::query()->delete();
-            CandidateSubmission::query()->delete();
-            ElectionPosition::query()->delete();
-            RegisteredVoter::query()->delete();
-            AuditLog::query()->delete();
-
-            $positionIds = [];
-            foreach ($snapshot['positions'] ?? [] as $storedPosition) {
-                $oldId = $storedPosition['id'];
-                unset($storedPosition['id']);
-                $positionIds[$oldId] = ElectionPosition::query()->create($storedPosition)->id;
-            }
-
-            $candidateIds = [];
-            foreach ($snapshot['candidates'] ?? [] as $storedCandidate) {
-                $oldId = $storedCandidate['id'];
-                $oldPositionId = $storedCandidate['position_id'];
-                unset($storedCandidate['id'], $storedCandidate['position_id']);
-                $storedCandidate['position_id'] = $positionIds[$oldPositionId] ?? null;
-                $candidateIds[$oldId] = CandidateSubmission::query()->create($storedCandidate)->id;
-            }
-
-            foreach ($snapshot['voters'] ?? [] as $storedVoter) {
-                RegisteredVoter::query()->create($storedVoter);
-            }
-
-            foreach ($snapshot['votes'] ?? [] as $storedVote) {
-                $storedVote['position_id'] = $positionIds[$storedVote['position_id']] ?? null;
-                $storedVote['candidate_submission_id'] = $storedVote['candidate_submission_id'] !== null
-                    ? ($candidateIds[$storedVote['candidate_submission_id']] ?? null)
-                    : null;
-                ElectionVote::query()->create($storedVote);
-            }
-
-            foreach ($snapshot['audit'] ?? [] as $storedAudit) {
-                unset($storedAudit['id']);
-                AuditLog::query()->create($storedAudit);
-            }
-        });
     }
 }
