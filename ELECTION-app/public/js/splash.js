@@ -15,7 +15,7 @@
         window.setTimeout(() => window.location.replace(splash.dataset.homeUrl), reducedMotion.matches ? 0 : 350);
     };
 
-    const timer = window.setTimeout(continueToHome, 5000);
+    const timer = window.setTimeout(continueToHome, 3000);
 
     document.querySelector('.splash-skip')?.addEventListener('click', (event) => {
         if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;

@@ -1,6 +1,6 @@
 :root {
     color-scheme: light;
-    --splash-duration: 5s;
+    --splash-duration: 3s;
     --splash-ease: cubic-bezier(.16, 1, .3, 1);
 }
 
