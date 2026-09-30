@@ -19,6 +19,7 @@
             <a aria-current="page" href="{{ route('admin.voter-management') }}" class="flex items-center gap-2 rounded border-l-4 border-[#ffdf98] bg-[#dee8ff] px-4 py-2.5 pl-5 text-sm font-bold text-[#115cb9]"><span class="material-symbols-outlined text-xl">badge</span>Voter Management</a>
             <a href="{{ route('admin.position-management') }}" class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff]"><span class="material-symbols-outlined text-xl">work</span>Position Management</a>
             <a href="{{ route('admin.results-document-preview') }}" class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff]"><span class="material-symbols-outlined text-xl">description</span>Results &amp; Document Preview</a>
+            <a href="{{ route('admin.audit-log') }}" class="flex items-center gap-2 rounded px-4 py-2.5 text-sm text-[#44474c] transition hover:bg-[#dee8ff]"><span class="material-symbols-outlined text-xl">history_edu</span>Audit Log</a>
         </nav>
     </aside>
     <main class="min-h-screen bg-[#f9f9ff] px-4 pb-8 pt-24 sm:px-6 lg:ml-64">
