@@ -96,8 +96,8 @@ h1 { margin: 0; font-family: Outfit, sans-serif; font-size: clamp(24px, 5.8vw, 3
 .election-term { display: inline-block; margin: 14px 0 0; padding: 4px 13px; border-radius: 4px; background: #d7e2ff; color: #001a40; font: 600 18px/26px Outfit, sans-serif; letter-spacing: .045em; animation: text-arrive .9s var(--splash-ease) .8s both; }
 
 .splash-footer { position: absolute; bottom: max(30px, env(safe-area-inset-bottom)); left: 24px; right: 24px; display: grid; justify-items: center; gap: 22px; }
-.splash-progress { width: 88px; height: 2px; background: #dce3ef; overflow: hidden; border-radius: 2px; }
-.splash-progress span { display: block; height: 100%; background: linear-gradient(90deg, #c8a34b, #115cb9); transform-origin: left; animation: progress-fill var(--splash-duration) linear both; }
+.splash-progress { position: relative; width: min(240px, 72vw); height: 4px; background: #e5ebf4; overflow: hidden; border-radius: 999px; box-shadow: 0 0 0 1px rgba(17, 92, 185, .04); }
+.splash-progress span { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #c8a34b 0%, #e2bd5c 20%, #115cb9 100%); transform: scaleX(0); transform-origin: left; border-radius: inherit; box-shadow: 0 0 10px rgba(17, 92, 185, .2); animation: progress-fill var(--splash-duration) linear both; }
 .splash-skip { padding: 10px 16px; color: #52647c; font-size: 12px; text-decoration: none; border-radius: 6px; }
 .splash-skip span { display: inline-block; margin-left: 7px; transition: transform .2s ease; }
 .splash-skip:hover { color: #115cb9; }
