@@ -31,31 +31,6 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        foreach ([
-            'President',
-            'Vice President',
-            'Secretary',
-            'Assist Sec',
-            'Treasurer',
-            'Auditor',
-        ] as $index => $name) {
-            ElectionPosition::firstOrCreate(
-                ['name' => $name],
-                [
-                    'sort_order' => $index + 1,
-                    'seats' => 1,
-                    'rule' => 'single',
-                    'allow_abstain' => true,
-                    'max_selections' => 1,
-                    'is_completed' => false,
-                    'is_unlocked' => false,
-                    'is_closed' => false,
-                    'candidacy_open' => false,
-                    'nomination_open' => false,
-                ],
-            );
-        }
-
         $encodedSnapshot = (string) env('ELECTION_SNAPSHOT_B64', '');
         if ($encodedSnapshot === '') {
             return;
