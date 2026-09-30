@@ -20,6 +20,21 @@ document.addEventListener('DOMContentLoaded', () => {
 window.refreshLivePage = window.refreshLivePage || (() => {
     let refreshing = false;
 
+    const comparableMainMarkup = (main) => {
+        const clone = main.cloneNode(true);
+
+        clone.querySelectorAll('[data-dashboard-abstain], [data-abstain-result]').forEach((element) => element.remove());
+        clone.querySelectorAll('span').forEach((element) => {
+            const label = element.textContent.trim();
+            if (label === 'ABSTAIN' || label === 'FINAL RESULT') element.closest('div.flex, span')?.remove();
+        });
+        clone.querySelectorAll('section').forEach((section) => {
+            if (section.querySelector('h2')?.textContent.trim() === 'Abstentions by position') section.remove();
+        });
+
+        return clone.innerHTML;
+    };
+
     return async () => {
         if (refreshing || document.hidden || window.isEditingWinner || document.activeElement?.isContentEditable) return;
         refreshing = true;
@@ -51,8 +66,11 @@ window.refreshLivePage = window.refreshLivePage || (() => {
 
             const currentMain = document.querySelector('main');
             const nextMain = nextDocument.querySelector('main');
-            if (currentMain && nextMain && currentMain.innerHTML !== nextMain.innerHTML) {
+            if (currentMain && nextMain && comparableMainMarkup(currentMain) !== comparableMainMarkup(nextMain)) {
+                const scrollX = window.scrollX;
+                const scrollY = window.scrollY;
                 currentMain.replaceWith(nextMain);
+                window.scrollTo(scrollX, scrollY);
                 document.dispatchEvent(new CustomEvent('admin-main-refreshed'));
             }
             const currentResultsDocument = document.querySelector('[data-live-results-document]');
