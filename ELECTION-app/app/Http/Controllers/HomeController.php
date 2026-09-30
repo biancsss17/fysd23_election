@@ -18,12 +18,8 @@ class HomeController extends Controller
     /**
      * Display the application homepage.
      */
-    public function index(): View|RedirectResponse
+    public function index(): View
     {
-        if (! session()->pull('splash_passed', false)) {
-            return redirect()->route('splash');
-        }
-
         $position = ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
             ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
         $allPositionsComplete = ElectionPosition::query()->exists()
