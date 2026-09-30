@@ -18,10 +18,13 @@ body.splash {
     position: relative;
     display: grid;
     place-items: center;
+    align-content: center;
+    grid-template-rows: auto auto;
+    row-gap: clamp(40px, 7vh, 72px);
     min-height: 100vh;
     min-height: 100svh;
     overflow: hidden;
-    padding: max(64px, env(safe-area-inset-top)) 24px max(120px, env(safe-area-inset-bottom));
+    padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
 }
 
 .ambient-glow {
@@ -95,7 +98,7 @@ body.splash {
 h1 { margin: 0; font-family: Outfit, sans-serif; font-size: clamp(18px, 4.2vw, 28px); line-height: 1.18; font-weight: 700; letter-spacing: -.02em; text-transform: uppercase; animation: text-arrive .9s var(--splash-ease) .6s both; }
 .election-term { display: inline-block; margin: 10px 0 0; padding: 3px 11px; border-radius: 4px; background: #d7e2ff; color: #001a40; font: 600 clamp(13px, 2.5vw, 16px)/22px Outfit, sans-serif; letter-spacing: .04em; animation: text-arrive .9s var(--splash-ease) .8s both; }
 
-.splash-footer { position: absolute; bottom: max(30px, env(safe-area-inset-bottom)); left: 24px; right: 24px; display: grid; justify-items: center; gap: 22px; }
+.splash-footer { position: relative; inset: auto; width: 100%; display: grid; justify-items: center; gap: 22px; }
 .splash-links { display: flex; align-items: center; justify-content: center; gap: 18px; }
 .splash-about-link { padding: 10px 16px; color: #115cb9; font-size: 12px; font-weight: 600; text-decoration: none; border-radius: 6px; }
 .splash-about-link:hover { color: #0e1c2f; background: #d7e2ff66; }
@@ -126,7 +129,6 @@ h1 { margin: 0; font-family: Outfit, sans-serif; font-size: clamp(18px, 4.2vw, 2
     body.splash:not(.about-page) .splash-center {
         max-width: 720px;
         margin-inline: auto;
-        transform: translateY(32px);
     }
     body.splash:not(.about-page) .insignia { width: 220px; height: 220px; margin-bottom: 34px; }
     body.splash:not(.about-page) .district-label { margin-bottom: 12px; font-size: 22px; }
