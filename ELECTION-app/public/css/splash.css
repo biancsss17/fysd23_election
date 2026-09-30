@@ -122,6 +122,14 @@ h1 { margin: 0; font-family: Outfit, sans-serif; font-size: clamp(18px, 4.2vw, 2
 .about-continue:hover { background: #1b3150; }
 .about-back:focus-visible, .about-continue:focus-visible { outline: 2px solid #115cb9; outline-offset: 3px; }
 
+@media (min-width: 768px) {
+    body.splash:not(.about-page) .splash-center { max-width: 720px; }
+    body.splash:not(.about-page) .insignia { width: 220px; height: 220px; margin-bottom: 34px; }
+    body.splash:not(.about-page) .district-label { margin-bottom: 12px; font-size: 22px; }
+    body.splash:not(.about-page) h1 { font-size: clamp(32px, 4vw, 44px); }
+    body.splash:not(.about-page) .election-term { margin-top: 16px; font-size: 20px; line-height: 28px; }
+}
+
 @keyframes logo-arrive {
     from { opacity: 0; transform: translateY(20px) scale(.76) rotate(-10deg); }
     to { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
