@@ -10,7 +10,6 @@ Route::get('/', function (Request $request) {
 
     return view('splash');
 })->name('splash');
-Route::view('/about', 'about')->name('about');
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 Route::get('/voter-access', [HomeController::class, 'voterAccess'])->name('voter-access');
 Route::post('/voter-access/verify', [HomeController::class, 'verifyVoterAccess'])->name('voter-access.verify');

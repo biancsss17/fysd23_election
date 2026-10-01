@@ -100,9 +100,6 @@ h1 { margin: 0; font-family: Outfit, sans-serif; font-size: clamp(18px, 4.2vw, 2
 
 .splash-footer { position: relative; inset: auto; width: 100%; display: grid; justify-items: center; gap: 22px; }
 .splash-links { display: flex; align-items: center; justify-content: center; gap: 18px; }
-.splash-about-link { padding: 10px 16px; color: #115cb9; font-size: 12px; font-weight: 600; text-decoration: none; border-radius: 6px; }
-.splash-about-link:hover { color: #0e1c2f; background: #d7e2ff66; }
-.splash-about-link:focus-visible { outline: 2px solid #115cb9; outline-offset: 3px; }
 .splash-progress { position: relative; width: min(240px, 72vw); height: 4px; background: #e5ebf4; overflow: hidden; border-radius: 999px; box-shadow: 0 0 0 1px rgba(17, 92, 185, .04); }
 .splash-progress span { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #c8a34b 0%, #e2bd5c 20%, #115cb9 100%); transform: scaleX(0); transform-origin: left; border-radius: inherit; box-shadow: 0 0 10px rgba(17, 92, 185, .2); animation: progress-fill var(--splash-duration) linear both; }
 .splash-skip { padding: 10px 16px; color: #52647c; font-size: 12px; text-decoration: none; border-radius: 6px; }
@@ -112,28 +109,15 @@ h1 { margin: 0; font-family: Outfit, sans-serif; font-size: clamp(18px, 4.2vw, 2
 .splash-skip:focus-visible { outline: 2px solid #115cb9; outline-offset: 3px; }
 .splash.is-leaving { opacity: 0; }
 
-.about-card { position: relative; width: min(100%, 700px); padding: 46px clamp(26px, 6vw, 70px); text-align: center; background: rgba(255, 255, 255, .92); border: 1px solid #e5ebf4; border-radius: 24px; box-shadow: 0 24px 60px -30px #28477755; }
-.about-logo { display: block; width: 96px; height: 96px; margin: 0 auto 20px; object-fit: contain; }
-.about-page .district-label { margin-bottom: 8px; font-size: 14px; }
-.about-page h1 { margin-bottom: 24px; font-size: clamp(28px, 5vw, 40px); text-transform: none; }
-.about-copy { max-width: 570px; margin: 0 auto; color: #52647c; font-size: 16px; line-height: 1.75; }
-.about-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 30px; }
-.about-back, .about-continue { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; text-decoration: none; }
-.about-back { color: #115cb9; border: 1px solid #c8d7f1; background: #fff; }
-.about-continue { color: #fff; background: #0e1c2f; }
-.about-back:hover { background: #f0f3ff; }
-.about-continue:hover { background: #1b3150; }
-.about-back:focus-visible, .about-continue:focus-visible { outline: 2px solid #115cb9; outline-offset: 3px; }
-
 @media (min-width: 768px) {
-    body.splash:not(.about-page) .splash-center {
+    body.splash .splash-center {
         max-width: 720px;
         margin-inline: auto;
     }
-    body.splash:not(.about-page) .insignia { width: 220px; height: 220px; margin-bottom: 34px; }
-    body.splash:not(.about-page) .district-label { margin-bottom: 12px; font-size: 22px; }
-    body.splash:not(.about-page) h1 { font-size: clamp(32px, 4vw, 44px); }
-    body.splash:not(.about-page) .election-term { margin-top: 16px; font-size: 20px; line-height: 28px; }
+    body.splash .insignia { width: 220px; height: 220px; margin-bottom: 34px; }
+    body.splash .district-label { margin-bottom: 12px; font-size: 22px; }
+    body.splash h1 { font-size: clamp(32px, 4vw, 44px); }
+    body.splash .election-term { margin-top: 16px; font-size: 20px; line-height: 28px; }
 }
 
 @keyframes logo-arrive {
