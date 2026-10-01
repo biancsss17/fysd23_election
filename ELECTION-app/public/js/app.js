@@ -241,11 +241,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const submitFinalVote = document.getElementById('submit-final-vote');
     const submitFinalVoteForm = submitFinalVote?.closest('form');
+    let reviewVoteSubmitting = false;
     submitFinalVoteForm?.addEventListener('submit', (event) => {
         if (submitFinalVote?.dataset.emailVerified !== 'true') {
             event.preventDefault();
             return;
         }
+        reviewVoteSubmitting = true;
         submitFinalVote.disabled = true;
         submitFinalVote.classList.add('opacity-80');
         submitFinalVote.innerHTML = '<span class="material-symbols-outlined animate-spin text-[22px]">progress_activity</span><span>REDIRECTING TO COUNTDOWN...</span>';
@@ -482,6 +484,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const pollElectionData = async () => {
             if (document.querySelector('.modal.flex, dialog[open]')) return;
+            if (document.title.includes('Review Your Vote')
+                && submitFinalVote?.dataset.emailVerified === 'true'
+                && !reviewVoteSubmitting) return;
             try {
                 const response = await fetch(window.electionDataUrl, { headers: { Accept: 'application/json' }, cache: 'no-store' });
                 if (!response.ok) return;
