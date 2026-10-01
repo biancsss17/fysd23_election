@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const ballotInputs = document.querySelectorAll('input[name="presidential_ballot"]');
+    let ballotInputs = Array.from(document.querySelectorAll('input[name="presidential_ballot"]'));
     const submitBallotButton = document.getElementById('submit-ballot-btn');
     let ballotCountdownTimer = null;
     const startBallotCountdown = (seconds) => {
@@ -299,6 +299,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 emptyState.textContent = 'No candidates are currently listed for this ballot.';
                 ballotForm.insertBefore(emptyState, abstainContainer || null);
             }
+
+            // Candidate cards are rebuilt from the live roster above. Refresh
+            // the input collection so selection tracking and submission use
+            // the visible controls, not the removed server-rendered controls.
+            ballotInputs = Array.from(document.querySelectorAll('input[name="presidential_ballot"]'));
+            ballotInputs.forEach((input) => input.addEventListener('change', updateBallotSelection));
+            updateBallotSelection();
         }
     }
 
