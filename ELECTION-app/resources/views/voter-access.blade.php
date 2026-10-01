@@ -25,6 +25,8 @@
         @php($votingOpen = $position && $position->is_unlocked && ! $position->is_closed)
         @if (! $votingOpen)
             <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900" role="status">Voting access will open when the administrator unlocks {{ $position?->name ?? 'the ballot' }}.</div>
+        @else
+            <div class="mt-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-bold text-[#115cb9]" id="access-countdown-wrap">Voting window: <span id="access-countdown">{{ $remainingSeconds }}</span>s remaining</div>
         @endif
 
         <form class="mt-6 space-y-4" method="POST" action="{{ route('voter-access.verify') }}">
@@ -41,6 +43,16 @@
     <script>
         const electionDataUrl = @json(route('election.data'));
         const initialVotingOpen = @json($votingOpen);
+        let accessRemaining = @json($remainingSeconds);
+        const accessCountdown = document.getElementById('access-countdown');
+        const accessCountdownTimer = window.setInterval(() => {
+            if (!accessCountdown || accessRemaining <= 0) {
+                window.clearInterval(accessCountdownTimer);
+                return;
+            }
+            accessRemaining -= 1;
+            accessCountdown.textContent = String(accessRemaining);
+        }, 1000);
         setInterval(async () => {
             try {
                 const response = await fetch(electionDataUrl, { headers: { Accept: 'application/json' }, cache: 'no-store' });

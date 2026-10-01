@@ -68,7 +68,18 @@ class HomeController extends Controller
             ->first()
             ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
 
-        return view('voter-access', compact('position'));
+        if ($position?->is_unlocked && $position->unlocked_at
+            && $position->unlocked_at->diffInSeconds(now()) >= self::BALLOT_WINDOW_SECONDS) {
+            $this->recordAutomaticAbstentions($position);
+            $position->update(['is_unlocked' => false, 'is_closed' => true, 'unlocked_at' => null]);
+            $position->refresh();
+        }
+
+        $remainingSeconds = $position?->is_unlocked && $position->unlocked_at
+            ? min(self::BALLOT_WINDOW_SECONDS, max(0, (int) floor(self::BALLOT_WINDOW_SECONDS - $position->unlocked_at->diffInSeconds(now()))))
+            : 0;
+
+        return view('voter-access', compact('position', 'remainingSeconds'));
     }
 
     public function verifyVoterAccess(Request $request): RedirectResponse
