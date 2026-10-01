@@ -48,7 +48,7 @@ window.refreshLivePage = window.refreshLivePage || (() => {
     };
 
     return async () => {
-        if (refreshing || document.hidden || window.isEditingWinner || document.activeElement?.isContentEditable || document.querySelector('form[data-submitting="true"]')) return;
+        if (refreshing || document.hidden || document.body.classList.contains('position-management-page') || window.isEditingWinner || document.activeElement?.isContentEditable || document.querySelector('form[data-submitting="true"]')) return;
         refreshing = true;
 
         try {
