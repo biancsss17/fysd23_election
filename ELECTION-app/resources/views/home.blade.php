@@ -41,6 +41,73 @@
                 -webkit-overflow-scrolling: touch;
             }
         }
+
+        @media (max-width: 767px) {
+            body.home-page [role="alert"],
+            body.home-page [role="status"] {
+                align-items: flex-start;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+                padding: .8rem;
+            }
+
+            body.home-page [role="alert"] > div,
+            body.home-page [role="status"] > div {
+                min-width: 0;
+            }
+
+            body.home-page #overview-active-actions section,
+            body.home-page #overview-voter-access,
+            body.home-page #overview-complete-actions {
+                min-width: 0;
+            }
+
+            body.home-page #overview-active-actions section h2,
+            body.home-page #overview-voter-access h2,
+            body.home-page #overview-complete-actions h2,
+            body.home-page #overview-voter-access p,
+            body.home-page #overview-complete-actions p {
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+
+            body.home-page .modal {
+                align-items: flex-start;
+                overflow-y: auto;
+                padding: max(1rem, env(safe-area-inset-top)) .75rem max(1rem, env(safe-area-inset-bottom));
+                -webkit-overflow-scrolling: touch;
+            }
+
+            body.home-page .modal > div {
+                max-height: calc(100dvh - 2rem);
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            body.home-page .modal-form {
+                padding: 1.25rem !important;
+            }
+
+            body.home-page .modal-form > div.flex {
+                flex-direction: column-reverse;
+            }
+
+            body.home-page .modal-form > div.flex > button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            body.home-page #ballot-lock-overlay {
+                padding: 1rem;
+            }
+
+            body.home-page #ballot-lock-overlay > div {
+                max-height: calc(100dvh - 2rem);
+                overflow-y: auto;
+                padding: 1.25rem;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
     </style>
 </head>
 <body class="home-page bg-surface font-sans text-on-surface antialiased">
