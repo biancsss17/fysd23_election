@@ -83,59 +83,15 @@ class AdminAuthController extends Controller
 
     public function resetElection(Request $request): RedirectResponse
     {
-        $archiveTitle = trim((string) $request->input('archive_name', 'FYS DISTRICT 23 ELECTION FOR 2027-2030'));
-        $archiveTitle = $archiveTitle !== '' ? mb_substr($archiveTitle, 0, 255) : 'FYS DISTRICT 23 ELECTION FOR 2027-2030';
-
-        DB::transaction(function () use ($archiveTitle): void {
-            $positions = ElectionPosition::query()->orderBy('sort_order')->orderBy('id')->get();
-            $archivedResults = $positions
-                ->map(function (ElectionPosition $position): array {
-                    $result = $this->buildPositionResult($position);
-
-                    return [
-                        'position' => $position->name,
-                        'seats' => $position->seats,
-                        'ballots_cast' => $result['ballots_cast'],
-                        'abstentions' => $result['abstentions'],
-                        'winners' => $result['winners']->map(fn (CandidateSubmission $winner): array => [
-                            'name' => $winner->display_candidate_name,
-                            'votes' => $winner->votes_count,
-                        ])->values()->all(),
-                    ];
-                })
-                ->values()
-                ->all();
-
-            $snapshot = [
-                'positions' => $positions->map(fn (ElectionPosition $position): array => $position->only([
-                    'id', 'name', 'sort_order', 'seats', 'rule', 'allow_abstain', 'max_selections', 'is_completed', 'is_unlocked', 'is_closed', 'candidacy_open', 'nomination_open', 'unlocked_at',
-                ]))->values()->all(),
-                'voters' => RegisteredVoter::query()->get()->map(fn (RegisteredVoter $voter): array => $voter->only(['email', 'is_active']))->values()->all(),
-                'candidates' => CandidateSubmission::query()->get()->map(fn (CandidateSubmission $candidate): array => $candidate->only([
-                    'id', 'candidate_name', 'display_name', 'submitted_by_email', 'submission_type', 'status', 'is_manual_winner', 'position_id',
-                ]))->values()->all(),
-                'votes' => ElectionVote::query()->get()->map(fn (ElectionVote $vote): array => $vote->only([
-                    'position_id', 'candidate_submission_id', 'voter_email', 'is_abstain',
-                ]))->values()->all(),
-            ];
-
-            AuditLog::query()->delete();
-            if ($positions->isNotEmpty()) {
-                AuditLog::query()->create([
-                    'title' => $archiveTitle,
-                    'action' => 'Election reset archive',
-                    'results' => ['positions' => $archivedResults, 'snapshot' => $snapshot],
-                    'created_by' => session('admin_email'),
-                ]);
-            }
-
+        DB::transaction(function (): void {
             ElectionVote::query()->delete();
             CandidateSubmission::query()->delete();
             ElectionPosition::query()->delete();
             RegisteredVoter::query()->delete();
+            AuditLog::query()->delete();
         });
 
-        return redirect()->route('admin.dashboard')->with('election_reset', 'Election reset successfully.');
+        return redirect()->route('admin.dashboard')->with('election_reset', 'All election data and saved reset archives were deleted. Administrator access was preserved.');
     }
 
     public function purgeElection(): RedirectResponse
