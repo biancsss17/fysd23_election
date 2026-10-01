@@ -13,7 +13,7 @@
         body > main { margin-left: 0; padding-top: 6rem; padding-left: 18rem; padding-right: 2rem; }
     }
     @media screen and (max-width: 1023px) {
-        html, body { min-height: 100%; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        html, body { min-height: 100%; overflow-x: hidden; overflow-y: auto; }
         body { padding-bottom: 4.75rem; }
         body > header { height: auto; min-height: 5rem; }
         body > header > div { min-height: 5rem; height: auto; padding: .65rem .75rem; align-items: center; }
