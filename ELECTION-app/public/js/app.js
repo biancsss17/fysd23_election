@@ -48,66 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         modal.querySelector('.modal-form')?.addEventListener('submit', (event) => {
             const form = modal.querySelector('.modal-form');
-            if (form?.dataset.twoStepSubmission) {
-                if (form.dataset.verified === 'true') {
-                    if (form.dataset.submitting === 'true') {
-                        event.preventDefault();
-                        return;
-                    }
-                    form.dataset.submitting = 'true';
-                    form.querySelectorAll('button').forEach((element) => { element.disabled = true; });
-                    const submitButton = form.querySelector('.modal-submit');
-                    if (submitButton) submitButton.textContent = 'Submitting…';
-                    return;
-                }
-
-                event.preventDefault();
-                if (form.dataset.submitting === 'true') return;
-                form.dataset.submitting = 'true';
-                const submitButton = form.querySelector('.modal-submit');
-                const originalLabel = submitButton?.textContent || 'Verify email';
-                if (submitButton) {
-                    submitButton.disabled = true;
-                    submitButton.textContent = 'Verifying email…';
-                }
-                const error = modal.querySelector('.modal-live-error');
-                error?.remove();
-                fetch(form.dataset.verifyAction, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': form.querySelector('input[name="_token"]')?.value || '',
-                        Accept: 'application/json',
-                        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-                    },
-                    credentials: 'same-origin',
-                    body: new URLSearchParams(new FormData(form)),
-                }).then(async (response) => {
-                    const payload = await response.json().catch(() => ({}));
-                    if (!response.ok) throw new Error(payload.message || 'Email verification failed.');
-                    form.dataset.verified = 'true';
-                    form.dataset.submitting = 'false';
-                    form.querySelectorAll('input:not([type="hidden"])').forEach((element) => { element.readOnly = true; });
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.textContent = form.dataset.finalLabel || 'Submit';
-                    }
-                    const notice = document.createElement('p');
-                    notice.className = 'modal-verified-notice mt-2 text-sm font-semibold text-emerald-700';
-                    notice.textContent = 'Email verified. Submit when you are ready.';
-                    form.querySelector('.modal-submit')?.before(notice);
-                }).catch((verificationError) => {
-                    form.dataset.submitting = 'false';
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.textContent = originalLabel;
-                    }
-                    const message = document.createElement('div');
-                    message.className = 'modal-live-error mx-4 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700';
-                    message.textContent = verificationError.message;
-                    form.before(message);
-                });
-                return;
-            }
             if (form?.dataset.serverForm) {
                 if (form.dataset.submitting === 'true') {
                     event.preventDefault();
