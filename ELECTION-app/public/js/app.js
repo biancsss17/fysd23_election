@@ -47,9 +47,20 @@ document.addEventListener('DOMContentLoaded', () => {
             button.addEventListener('click', () => closeModal(modal));
         });
         modal.querySelector('.modal-form')?.addEventListener('submit', (event) => {
-            if (modal.querySelector('.modal-form')?.dataset.serverForm) return;
+            const form = modal.querySelector('.modal-form');
+            if (form?.dataset.serverForm) {
+                if (form.dataset.submitting === 'true') {
+                    event.preventDefault();
+                    return;
+                }
+                form.dataset.submitting = 'true';
+                form.querySelectorAll('button').forEach((element) => { element.disabled = true; });
+                const submitButton = form.querySelector('.modal-submit');
+                if (submitButton) submitButton.textContent = 'Submitting…';
+                return;
+            }
             event.preventDefault();
-            modal.querySelector('.modal-form').classList.add('hidden');
+            form.classList.add('hidden');
             modal.querySelector('.modal-success')?.classList.remove('hidden');
         });
     });
@@ -470,6 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const pollElectionData = async () => {
+            if (document.querySelector('.modal.flex, dialog[open]')) return;
             try {
                 const response = await fetch(window.electionDataUrl, { headers: { Accept: 'application/json' }, cache: 'no-store' });
                 if (!response.ok) return;

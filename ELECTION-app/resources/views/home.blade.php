@@ -28,6 +28,12 @@
         html:has(body.home-page),
         body.home-page { overflow-x: hidden; }
 
+        body.home-page #overview-complete-actions > a {
+            background-color: #6d28d9;
+            background-image: linear-gradient(90deg, #6d28d9 0%, #4338ca 100%);
+            color: #fff;
+        }
+
         @media (min-width: 1024px) {
             html:has(body.home-page),
             body.home-page { overflow-y: hidden; }
