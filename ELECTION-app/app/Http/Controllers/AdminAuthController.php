@@ -404,10 +404,6 @@ class AdminAuthController extends Controller
 
     public function deletePosition(ElectionPosition $position): RedirectResponse
     {
-        if ($position->is_completed) {
-            return back()->with('position_error', 'Completed positions cannot be erased.');
-        }
-
         DB::transaction(function () use ($position): void {
             $candidateIds = CandidateSubmission::query()
                 ->where('position_id', $position->id)
