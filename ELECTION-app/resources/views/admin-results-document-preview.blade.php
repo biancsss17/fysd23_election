@@ -38,6 +38,71 @@
         gap: 1rem;
         margin-top: 2rem;
     }
+    @media (max-width: 767px) {
+        body > main {
+            padding-left: .75rem !important;
+            padding-right: .75rem !important;
+            padding-bottom: 6rem !important;
+        }
+        body > [data-live-results-document] {
+            width: calc(100% - 1rem) !important;
+            max-width: none !important;
+            margin: 0 .5rem 6rem !important;
+            padding: 1rem !important;
+            overflow: hidden;
+        }
+        body > [data-live-results-document] > .mb-4.flex {
+            justify-content: stretch !important;
+        }
+        body > [data-live-results-document] > .mb-4.flex button {
+            width: 100%;
+            justify-content: center;
+            padding: .8rem 1rem !important;
+            font-size: 1rem !important;
+        }
+        body > [data-live-results-document] .text-center > .flex {
+            flex-direction: column;
+            gap: .75rem;
+        }
+        body > [data-live-results-document] .text-center img {
+            width: 4.5rem;
+            height: 4.5rem;
+        }
+        body > [data-live-results-document] .text-center h1 {
+            margin-top: 1rem;
+            font-size: clamp(1.35rem, 6.2vw, 1.8rem);
+            line-height: 1.15;
+        }
+        body > [data-live-results-document] .text-center h2 {
+            font-size: clamp(1.1rem, 5.2vw, 1.45rem);
+            line-height: 1.2;
+        }
+        body > [data-live-results-document] .text-center p {
+            font-size: .78rem;
+            line-height: 1.35;
+        }
+        body > [data-live-results-document] table {
+            table-layout: fixed;
+            font-size: .78rem !important;
+        }
+        body > [data-live-results-document] th,
+        body > [data-live-results-document] td {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            padding: .55rem !important;
+        }
+        body > [data-live-results-document] th {
+            width: 34%;
+        }
+        body > [data-live-results-document] .mt-12 {
+            margin-top: 2rem;
+            gap: 1.5rem;
+        }
+        body > [data-live-results-document] .mt-12 p {
+            font-size: .72rem;
+            line-height: 1.25;
+        }
+    }
     @media print {
         body.document-only > [data-live-results-document] {
             width: 100% !important;
