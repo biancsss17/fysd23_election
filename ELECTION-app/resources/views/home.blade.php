@@ -42,7 +42,7 @@
             }
         }
 
-        @media (max-width: 767px) {
+        @media screen and (max-width: 767px) {
             body.home-page [role="alert"],
             body.home-page [role="status"] {
                 align-items: flex-start;

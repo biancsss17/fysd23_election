@@ -38,7 +38,7 @@
         gap: 1rem;
         margin-top: 2rem;
     }
-    @media (max-width: 767px) {
+    @media screen and (max-width: 767px) {
         body > main {
             padding-left: .75rem !important;
             padding-right: .75rem !important;
