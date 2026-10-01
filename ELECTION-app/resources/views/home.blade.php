@@ -26,7 +26,21 @@
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
     <style>
         html:has(body.home-page),
-        body.home-page { overflow: hidden; }
+        body.home-page { overflow-x: hidden; }
+
+        @media (min-width: 1024px) {
+            html:has(body.home-page),
+            body.home-page { overflow-y: hidden; }
+        }
+
+        @media (max-width: 1023px) {
+            html:has(body.home-page),
+            body.home-page {
+                min-height: 100%;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
     </style>
 </head>
 <body class="home-page bg-surface font-sans text-on-surface antialiased">
