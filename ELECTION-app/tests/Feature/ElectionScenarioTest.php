@@ -448,7 +448,7 @@ class ElectionScenarioTest extends TestCase
         $this->assertSame(6, ElectionVote::query()->where('position_id', $position->id)->where('is_abstain', true)->count());
     }
 
-    public function test_reset_archive_and_restore_round_trip_preserves_scenario_data(): void
+    public function test_reset_permanently_deletes_election_data_without_an_archive(): void
     {
         $position = $this->position('Auditor', 2, 'multi');
         $candidate = CandidateSubmission::create([
@@ -468,16 +468,10 @@ class ElectionScenarioTest extends TestCase
         $this->withSession($this->adminSession())
             ->post(route('admin.dashboard.reset-election'), ['archive_name' => 'Disposable Scenario Archive'])
             ->assertRedirect(route('admin.dashboard'));
-        $archive = AuditLog::query()->firstOrFail();
-        $this->assertSame('Disposable Scenario Archive', $archive->title);
         $this->assertDatabaseCount('election_positions', 0);
-
-        $this->withSession($this->adminSession())
-            ->post(route('admin.audit-log.restore', $archive))
-            ->assertRedirect(route('admin.dashboard'));
-        $this->assertDatabaseHas('election_positions', ['name' => 'Auditor', 'seats' => 2]);
-        $this->assertDatabaseHas('candidate_submissions', ['candidate_name' => 'Archived Winner']);
-        $this->assertDatabaseHas('election_votes', ['voter_email' => 'scenario-voter-1@example.test']);
+        $this->assertDatabaseCount('candidate_submissions', 0);
+        $this->assertDatabaseCount('election_votes', 0);
+        $this->assertDatabaseCount('audit_logs', 0);
     }
 
     public function test_admin_can_edit_winner_and_add_missing_winner_without_exceeding_limits(): void
