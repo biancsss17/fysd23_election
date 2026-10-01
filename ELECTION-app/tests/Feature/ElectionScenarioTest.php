@@ -195,11 +195,19 @@ class ElectionScenarioTest extends TestCase
     {
         $position = $this->position('President');
 
+        $this->postJson(route('candidacy.verify-email'), [
+            'full_name' => 'Scenario Candidate One',
+            'email' => 'scenario-voter-1@example.test',
+        ])->assertOk()->assertJson(['verified' => true]);
         $this->post(route('candidacy.submit'), [
             'full_name' => 'Scenario Candidate One',
             'email' => 'scenario-voter-1@example.test',
         ])->assertRedirect(route('home'));
 
+        $this->postJson(route('nomination.verify-email'), [
+            'nominee_name' => 'Scenario Candidate Two',
+            'email' => 'scenario-voter-2@example.test',
+        ])->assertOk()->assertJson(['verified' => true]);
         $nomination = $this->post(route('nomination.submit'), [
             'nominee_name' => 'Scenario Candidate Two',
             'email' => 'scenario-voter-2@example.test',
@@ -210,17 +218,15 @@ class ElectionScenarioTest extends TestCase
         $this->assertSame($position->id, $candidate->fresh()->position_id);
         $this->assertNotNull($nomination);
 
-        $this->post(route('candidacy.submit'), [
+        $this->postJson(route('candidacy.verify-email'), [
             'full_name' => 'Duplicate Candidate',
             'email' => 'scenario-voter-1@example.test',
-        ])->assertRedirect(route('home'))
-            ->assertSessionHas('candidacy_error');
+        ])->assertStatus(422);
 
-        $this->post(route('nomination.submit'), [
+        $this->postJson(route('nomination.verify-email'), [
             'nominee_name' => 'Duplicate Nominee',
             'email' => 'scenario-voter-2@example.test',
-        ])->assertRedirect(route('home'))
-            ->assertSessionHas('nomination_error');
+        ])->assertStatus(422);
     }
 
     public function test_unlock_lock_and_manual_close_control_the_current_position(): void

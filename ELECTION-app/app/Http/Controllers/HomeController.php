@@ -285,6 +285,48 @@ class HomeController extends Controller
         return back()->with('email_success', 'Email verified. You may now submit your final vote.');
     }
 
+    public function verifySubmissionEmail(Request $request): JsonResponse
+    {
+        $type = $request->routeIs('candidacy.verify-email') ? 'candidacy' : 'nomination';
+        $nameField = $type === 'candidacy' ? 'full_name' : 'nominee_name';
+        $validated = $request->validate([
+            $nameField => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+        ]);
+        $positionId = $this->activePositionId();
+        $position = $positionId ? ElectionPosition::query()->find($positionId) : null;
+        $isOpen = $type === 'candidacy' ? (bool) $position?->candidacy_open : (bool) $position?->nomination_open;
+        $errorKey = $type === 'candidacy' ? 'candidacy_error' : 'nomination_error';
+
+        if (! $position || ! $isOpen) {
+            return response()->json(['message' => $type === 'candidacy'
+                ? 'Candidacy is currently closed by the administrator.'
+                : 'Nominations are currently closed by the administrator.'], 422);
+        }
+
+        $email = strtolower(trim($validated['email']));
+        if (! RegisteredVoter::query()->where('email', $email)->where('is_active', true)->exists()) {
+            return response()->json(['message' => 'This email is not registered as an eligible voter.'], 422);
+        }
+
+        $submissionType = $type === 'candidacy' ? 'Self-Declaration' : 'Peer Nomination';
+        if (CandidateSubmission::query()
+            ->where('submitted_by_email', $email)
+            ->where('submission_type', $submissionType)
+            ->where('position_id', $positionId)
+            ->exists()) {
+            return response()->json(['message' => 'This email has already submitted for this position.'], 422);
+        }
+
+        session(['verified_submission' => [
+            'type' => $type,
+            'email' => $email,
+            'position_id' => $positionId,
+        ]]);
+
+        return response()->json(['verified' => true, 'email' => $email, 'message' => 'Email verified. You may now submit.']);
+    }
+
     public function submitCandidacy(Request $request): RedirectResponse
     {
         $positionId = $this->activePositionId();
@@ -310,6 +352,10 @@ class HomeController extends Controller
                 ->with('candidacy_error', 'You are not eligible to vote. Please contact an election administrator.');
         }
 
+        if (! $this->submissionEmailVerified('candidacy', $email, $positionId)) {
+            return back()->withInput()->with('candidacy_error', 'Verify your registered email before submitting candidacy.');
+        }
+
         if (CandidateSubmission::query()
             ->where('submitted_by_email', $email)
             ->where('submission_type', 'Self-Declaration')
@@ -327,6 +373,7 @@ class HomeController extends Controller
         ]);
 
         $this->lockActivePosition();
+        session()->forget('verified_submission');
 
         return redirect()->route('home')->with('submission_success', 'Your candidacy has been recorded successfully.');
     }
@@ -356,6 +403,10 @@ class HomeController extends Controller
                 ->with('nomination_error', 'You are not eligible to vote. Please contact an election administrator.');
         }
 
+        if (! $this->submissionEmailVerified('nomination', $email, $positionId)) {
+            return back()->withInput()->with('nomination_error', 'Verify your registered email before submitting the nomination.');
+        }
+
         if (CandidateSubmission::query()
             ->where('submitted_by_email', $email)
             ->where('submission_type', 'Peer Nomination')
@@ -373,6 +424,7 @@ class HomeController extends Controller
         ]);
 
         $this->lockActivePosition();
+        session()->forget('verified_submission');
 
         return redirect()->route('home')->with('submission_success', 'Your nomination has been recorded successfully.');
     }
@@ -635,6 +687,16 @@ class HomeController extends Controller
                 'voter_email' => $email,
                 'is_abstain' => true,
             ]));
+    }
+
+    private function submissionEmailVerified(string $type, string $email, int $positionId): bool
+    {
+        $verification = session('verified_submission');
+
+        return is_array($verification)
+            && ($verification['type'] ?? null) === $type
+            && ($verification['email'] ?? null) === $email
+            && (int) ($verification['position_id'] ?? 0) === $positionId;
     }
 
     private function activePositionId(): ?int

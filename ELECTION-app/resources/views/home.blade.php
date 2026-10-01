@@ -204,7 +204,9 @@
 
         const candidacyForm = document.querySelector('#modal-candidacy .modal-form');
         if (candidacyForm) {
-            candidacyForm.dataset.serverForm = 'candidacy';
+            candidacyForm.dataset.twoStepSubmission = 'candidacy';
+            candidacyForm.dataset.verifyAction = @json(route('candidacy.verify-email'));
+            candidacyForm.dataset.finalLabel = 'Submit candidacy';
             candidacyForm.method = 'POST';
             candidacyForm.action = @json(route('candidacy.submit'));
             const fields = candidacyForm.querySelectorAll('input');
@@ -219,7 +221,9 @@
 
         const nominationForm = document.querySelector('#modal-nomination .modal-form');
         if (nominationForm) {
-            nominationForm.dataset.serverForm = 'nomination';
+            nominationForm.dataset.twoStepSubmission = 'nomination';
+            nominationForm.dataset.verifyAction = @json(route('nomination.verify-email'));
+            nominationForm.dataset.finalLabel = 'Submit nomination';
             nominationForm.method = 'POST';
             nominationForm.action = @json(route('nomination.submit'));
             const fields = nominationForm.querySelectorAll('input');
