@@ -1,4 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('form').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+            form.dataset.submitting = 'true';
+            const submitter = event.submitter || form.querySelector('button[type="submit"]');
+            if (submitter) {
+                submitter.disabled = true;
+                submitter.dataset.originalLabel = submitter.innerHTML;
+                submitter.textContent = 'Processing…';
+            }
+        });
+    });
+
     document.querySelectorAll('a[data-path="login"]').forEach((link) => {
         link.addEventListener('click', (event) => {
             event.preventDefault();
@@ -36,7 +48,7 @@ window.refreshLivePage = window.refreshLivePage || (() => {
     };
 
     return async () => {
-        if (refreshing || document.hidden || window.isEditingWinner || document.activeElement?.isContentEditable) return;
+        if (refreshing || document.hidden || window.isEditingWinner || document.activeElement?.isContentEditable || document.querySelector('form[data-submitting="true"]')) return;
         refreshing = true;
 
         try {
