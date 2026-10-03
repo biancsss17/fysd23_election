@@ -23,8 +23,7 @@ class HomeController extends Controller
      */
     public function index(): View
     {
-        $position = ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
-            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
+        $position = ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first();
         $allPositionsComplete = ElectionPosition::query()->exists()
             && ! ElectionPosition::query()->where('is_completed', false)->exists();
         $submissions = CandidateSubmission::query()
@@ -68,8 +67,7 @@ class HomeController extends Controller
             ->where('is_completed', false)
             ->where('is_closed', false)
             ->orderBy('sort_order')->orderBy('id')
-            ->first()
-            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
+            ->first();
 
         if ($position?->is_unlocked && $position->unlocked_at
             && $position->unlocked_at->diffInSeconds(now()) >= self::BALLOT_WINDOW_SECONDS) {
@@ -137,9 +135,7 @@ class HomeController extends Controller
         $position = $positionId
             ? ElectionPosition::query()->find($positionId)
             : ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first();
-        $position ??= ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
-            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first()
-            ?? ElectionPosition::query()->orderBy('sort_order')->orderBy('id')->first();
+        $position ??= ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first();
         if ($position) {
             session(['current_position_id' => $position->id]);
             if ($position->is_unlocked && $position->unlocked_at
@@ -162,8 +158,7 @@ class HomeController extends Controller
 
     public function publicElectionData(): JsonResponse
     {
-        $activePosition = ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
-            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
+        $activePosition = ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first();
         if ($activePosition?->is_unlocked && $activePosition->unlocked_at
             && $activePosition->unlocked_at->diffInSeconds(now()) >= self::BALLOT_WINDOW_SECONDS) {
             $this->recordAutomaticAbstentions($activePosition);
@@ -256,9 +251,10 @@ class HomeController extends Controller
                 ->with('email_error', 'This email is not registered for the District 23 FYS election.');
         }
 
-        $position = ElectionPosition::query()->find(session('current_position_id'))
-            ?? ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
-            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
+        $position = ElectionPosition::query()->find(session('current_position_id'));
+        if (! $position || $position->is_completed || $position->is_closed) {
+            $position = ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first();
+        }
         if ($position?->is_unlocked && $position->unlocked_at
             && $position->unlocked_at->diffInSeconds(now()) >= self::BALLOT_WINDOW_SECONDS) {
             $this->recordAutomaticAbstentions($position);
@@ -381,9 +377,10 @@ class HomeController extends Controller
             'position_id' => ['nullable', 'integer', 'exists:election_positions,id'],
         ]);
 
-        $position = ElectionPosition::query()->find(session('current_position_id'))
-            ?? ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
-            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
+        $position = ElectionPosition::query()->find(session('current_position_id'));
+        if (! $position || $position->is_completed || $position->is_closed) {
+            $position = ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first();
+        }
 
         if (! $position || ! $position->is_unlocked || $position->is_closed) {
             if ($position?->is_closed) {
@@ -415,8 +412,7 @@ class HomeController extends Controller
 
     public function voteCountdown(): View
     {
-        $position = ElectionPosition::query()->find(session('current_position_id'))
-            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first();
+        $position = ElectionPosition::query()->find(session('current_position_id'));
 
         $remainingSeconds = $position?->unlocked_at
             ? min(self::BALLOT_WINDOW_SECONDS, max(0, (int) floor(self::BALLOT_WINDOW_SECONDS - $position->unlocked_at->diffInSeconds(now()))))
@@ -701,8 +697,7 @@ class HomeController extends Controller
 
     private function activePositionId(): ?int
     {
-        return ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->value('id')
-            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->value('id');
+        return ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->value('id');
     }
 
     private function timelineStep(?ElectionPosition $position, $submissions): int

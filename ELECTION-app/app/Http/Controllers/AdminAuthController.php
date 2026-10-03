@@ -411,7 +411,11 @@ class AdminAuthController extends Controller
     {
         $activePosition = $this->activePosition();
 
-        if (! $activePosition || $activePosition->id !== $position->id) {
+        // A closed, unfinished position is still the current position when
+        // there is no open position to advance to. This keeps manual reopen
+        // available without allowing an earlier position to interrupt a later one.
+        if (($activePosition && $activePosition->id !== $position->id)
+            || (! $activePosition && $position->is_completed)) {
             return back()->with('position_error', 'Only the current position can be reopened.');
         }
 
@@ -579,9 +583,7 @@ class AdminAuthController extends Controller
 
     private function activePosition(): ?ElectionPosition
     {
-        return ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first()
-            ?? ElectionPosition::query()->where('is_completed', false)->orderBy('sort_order')->orderBy('id')->first()
-            ?? ElectionPosition::query()->orderBy('sort_order')->orderBy('id')->first();
+        return ElectionPosition::query()->where('is_completed', false)->where('is_closed', false)->orderBy('sort_order')->orderBy('id')->first();
     }
 
     private function positionCandidates(?ElectionPosition $position)
