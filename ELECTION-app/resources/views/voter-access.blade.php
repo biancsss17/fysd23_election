@@ -17,9 +17,6 @@
 
         @if (session('access_error'))
             <div class="auto-dismiss-5s mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700" role="alert">{{ session('access_error') }}</div>
-            @if (session('duplicate_voter_access_email'))
-                <a class="mt-4 flex w-full items-center justify-center rounded-lg bg-[#0b192c] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#132742]" href="{{ route('ballot') }}">Return to active ballot</a>
-            @endif
         @endif
 
         @php($votingOpen = $position && $position->is_unlocked && ! $position->is_closed)
@@ -31,9 +28,8 @@
 
         <form class="mt-6 space-y-4" method="POST" action="{{ route('voter-access.verify') }}">
             @csrf
-            <input id="voter-tab-id" name="tab_id" type="hidden" value="">
             <label class="block text-sm font-bold" for="email">Registered email address
-                <input class="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 font-normal outline-none transition focus:border-[#115cb9] focus:ring-2 focus:ring-[#115cb9]/20 {{ session('duplicate_voter_access_email') ? 'cursor-not-allowed opacity-75' : '' }}" id="email" name="email" type="email" value="{{ session('duplicate_voter_access_email') ?: old('email') }}" placeholder="name@example.com" required autofocus @if (session('duplicate_voter_access_email')) readonly @endif>
+                <input class="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 font-normal outline-none transition focus:border-[#115cb9] focus:ring-2 focus:ring-[#115cb9]/20" id="email" name="email" type="email" value="{{ old('email') }}" placeholder="name@example.com" required autofocus>
             </label>
             @error('email')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
             <button class="flex w-full items-center justify-center gap-2 rounded-lg bg-violet-700 px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-50" type="submit" @disabled(! $votingOpen)>{{ $votingOpen ? 'Submit' : 'Voting locked' }}</button>
@@ -42,15 +38,6 @@
         <a class="mt-4 block text-center text-sm font-semibold text-[#115cb9]" href="{{ route('home') }}">Back to overview</a>
     </main>
     <script>
-        const voterTabId = document.getElementById('voter-tab-id');
-        if (voterTabId) {
-            let tabId = sessionStorage.getItem('fysd23_voter_tab_id');
-            if (!tabId) {
-                tabId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-                sessionStorage.setItem('fysd23_voter_tab_id', tabId);
-            }
-            voterTabId.value = tabId;
-        }
         const electionDataUrl = @json(route('election.data'));
         const initialVotingOpen = @json($votingOpen);
         let accessRemaining = @json($remainingSeconds);

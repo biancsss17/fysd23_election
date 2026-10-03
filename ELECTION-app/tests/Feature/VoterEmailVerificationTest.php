@@ -63,7 +63,7 @@ class VoterEmailVerificationTest extends TestCase
             ->assertSessionHas('email_error', 'You have already voted for this position.');
     }
 
-    public function test_voter_email_cannot_be_entered_again_in_another_tab_session(): void
+    public function test_registered_voter_can_reenter_the_ballot_access_page(): void
     {
         $position = ElectionPosition::create([
             'name' => 'President',
@@ -102,7 +102,7 @@ class VoterEmailVerificationTest extends TestCase
         $this->post(route('voter-access.verify'), [
             'email' => 'voter@example.com',
         ])->assertRedirect()
-            ->assertSessionHas('access_error', 'This voter email is already active in another ballot tab. Continue in the existing tab.');
+            ->assertSessionHas('verified_email', 'voter@example.com');
     }
 
     public function test_voter_access_waits_until_admin_unlocks_voting(): void
