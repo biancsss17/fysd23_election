@@ -101,12 +101,6 @@ class HomeController extends Controller
                 ->with('access_error', 'This email is not registered for the District 23 FYS election.');
         }
 
-        if (ElectionVote::query()->where('voter_email', $email)->exists()) {
-            return back()
-                ->withInput()
-                ->with('access_error', 'This email has already submitted a vote and cannot enter another ballot.');
-        }
-
         $position = ElectionPosition::query()
             ->where('is_completed', false)
             ->where('is_closed', false)
@@ -114,6 +108,15 @@ class HomeController extends Controller
             ->first();
         if (! $position || ! $position->is_unlocked) {
             return back()->withInput()->with('access_error', 'Voting has not started yet. Please wait for the administrator to unlock the ballot.');
+        }
+
+        if (ElectionVote::query()
+            ->where('position_id', $position->id)
+            ->where('voter_email', $email)
+            ->exists()) {
+            return back()
+                ->withInput()
+                ->with('access_error', 'This email has already submitted a vote for this position.');
         }
 
         session([

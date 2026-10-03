@@ -125,7 +125,7 @@ class VoterEmailVerificationTest extends TestCase
             ->assertSessionHas('access_error', 'Voting has not started yet. Please wait for the administrator to unlock the ballot.');
     }
 
-    public function test_email_with_a_recorded_vote_cannot_open_another_ballot(): void
+    public function test_email_with_a_recorded_vote_cannot_reopen_the_same_position(): void
     {
         $position = ElectionPosition::create([
             'name' => 'President',
@@ -149,6 +149,25 @@ class VoterEmailVerificationTest extends TestCase
         $this->post(route('voter-access.verify'), [
             'email' => 'voter@example.com',
         ])->assertRedirect()
-            ->assertSessionHas('access_error', 'This email has already submitted a vote and cannot enter another ballot.');
+            ->assertSessionHas('access_error', 'This email has already submitted a vote for this position.');
+    }
+
+    public function test_email_with_a_recorded_vote_can_enter_the_next_position(): void
+    {
+        $firstPosition = ElectionPosition::create([
+            'name' => 'President', 'seats' => 1, 'rule' => 'single', 'allow_abstain' => true,
+            'max_selections' => 1, 'is_unlocked' => true, 'is_completed' => true,
+        ]);
+        $secondPosition = ElectionPosition::create([
+            'name' => 'Secretary', 'seats' => 1, 'rule' => 'single', 'allow_abstain' => true,
+            'max_selections' => 1, 'is_unlocked' => true,
+        ]);
+        RegisteredVoter::create(['email' => 'voter@example.com', 'is_active' => true]);
+        ElectionVote::create(['position_id' => $firstPosition->id, 'voter_email' => 'voter@example.com', 'is_abstain' => true]);
+
+        $this->post(route('voter-access.verify'), ['email' => 'voter@example.com'])
+            ->assertRedirect(route('ballot'))
+            ->assertSessionHas('verified_email', 'voter@example.com');
+        $this->get(route('ballot'))->assertOk()->assertSee('Secretary');
     }
 }
