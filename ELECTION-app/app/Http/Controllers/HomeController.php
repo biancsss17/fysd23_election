@@ -10,6 +10,7 @@ use App\Models\VoterPositionBallot;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
 
@@ -61,7 +62,7 @@ class HomeController extends Controller
         return view('final-document', compact('positions'));
     }
 
-    public function voterAccess(): View
+    public function voterAccess(): Response
     {
         $position = ElectionPosition::query()
             ->where('is_completed', false)
