@@ -410,7 +410,6 @@ class HomeController extends Controller
         }
 
         session(['pending_vote_choices' => $validated['choices']]);
-        session()->forget('verified_email');
         if (! empty($validated['position_id'])) {
             session(['current_position_id' => $validated['position_id']]);
         }
