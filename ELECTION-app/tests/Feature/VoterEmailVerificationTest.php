@@ -92,6 +92,7 @@ class VoterEmailVerificationTest extends TestCase
         $this->get(route('voter-access'))
             ->assertOk()
             ->assertSee('Registered email address')
+            ->assertHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->assertDontSee('readonly', false)
             ->assertDontSee('already active in another ballot tab');
 

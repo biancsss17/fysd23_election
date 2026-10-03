@@ -81,7 +81,9 @@ class HomeController extends Controller
             ? min(self::BALLOT_WINDOW_SECONDS, max(0, (int) floor(self::BALLOT_WINDOW_SECONDS - $position->unlocked_at->diffInSeconds(now()))))
             : 0;
 
-        return view('voter-access', compact('position', 'remainingSeconds'));
+        return response()
+            ->view('voter-access', compact('position', 'remainingSeconds'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     public function verifyVoterAccess(Request $request): RedirectResponse
