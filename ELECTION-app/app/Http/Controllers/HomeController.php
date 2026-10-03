@@ -6,6 +6,7 @@ use App\Models\CandidateSubmission;
 use App\Models\ElectionPosition;
 use App\Models\ElectionVote;
 use App\Models\RegisteredVoter;
+use App\Models\VoterPositionBallot;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -522,6 +523,17 @@ class HomeController extends Controller
         }
 
         $positionId = (int) (session('current_position_id') ?: $position?->id);
+        $claimed = $positionId > 0 && VoterPositionBallot::query()->insertOrIgnore([
+            'position_id' => $positionId,
+            'voter_email' => $email,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]) === 1;
+        if (! $claimed) {
+            session()->forget(['verified_email', 'pending_vote_choices']);
+
+            return redirect()->route('home')->with('submission_error', 'You have already voted for this position.');
+        }
         $this->recordVoteChoices($choices, $email, $positionId > 0 ? $positionId : null);
         $receiptPosition = $positionId > 0 ? ElectionPosition::query()->find($positionId) : null;
         $candidateChoices = collect($choices)
@@ -552,7 +564,7 @@ class HomeController extends Controller
 
         if ($normalizedChoices->isEmpty()) {
             if ($positionId && in_array('abstain', $choices, true)) {
-                $this->recordAbstention($positionId, $email);
+                $this->recordAbstention($positionId, $email, false);
             }
 
             return;
@@ -577,8 +589,20 @@ class HomeController extends Controller
         }
     }
 
-    private function recordAbstention(int $positionId, string $email): void
+    private function recordAbstention(int $positionId, string $email, bool $claimBallot = true): void
     {
+        if ($claimBallot) {
+            $claimed = VoterPositionBallot::query()->insertOrIgnore([
+                'position_id' => $positionId,
+                'voter_email' => $email,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]) === 1;
+            if (! $claimed) {
+                return;
+            }
+        }
+
         ElectionVote::query()->firstOrCreate(
             ['position_id' => $positionId, 'voter_email' => $email, 'is_abstain' => true],
             ['candidate_submission_id' => null],
