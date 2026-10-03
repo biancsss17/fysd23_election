@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\RegisteredVoter;
 use App\Models\ElectionPosition;
 use App\Models\ElectionVote;
+use App\Models\VoterPositionBallot;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -169,5 +170,31 @@ class VoterEmailVerificationTest extends TestCase
             ->assertRedirect(route('ballot'))
             ->assertSessionHas('verified_email', 'voter@example.com');
         $this->get(route('ballot'))->assertOk()->assertSee('Secretary');
+    }
+
+    public function test_interrupted_ballot_marker_does_not_block_a_retry(): void
+    {
+        $position = ElectionPosition::create([
+            'name' => 'President', 'seats' => 1, 'rule' => 'single', 'allow_abstain' => true,
+            'max_selections' => 1, 'is_unlocked' => true,
+        ]);
+        RegisteredVoter::create(['email' => 'voter@example.com', 'is_active' => true]);
+        VoterPositionBallot::create([
+            'position_id' => $position->id,
+            'voter_email' => 'voter@example.com',
+        ]);
+
+        $this->withSession([
+            'current_position_id' => $position->id,
+            'verified_email' => 'voter@example.com',
+            'pending_vote_choices' => ['abstain'],
+        ])->post(route('review-vote.submit'))
+            ->assertRedirect(route('vote-countdown'));
+
+        $this->assertDatabaseHas('election_votes', [
+            'position_id' => $position->id,
+            'voter_email' => 'voter@example.com',
+            'is_abstain' => true,
+        ]);
     }
 }

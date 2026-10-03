@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
@@ -508,27 +509,71 @@ class HomeController extends Controller
             return back()->with('email_error', 'Verify your registered email before submitting your vote.');
         }
 
-        if ($position && ElectionVote::query()
-            ->where('position_id', $position->id)
-            ->where('voter_email', $email)
-            ->exists()) {
-            session()->forget(['verified_email', 'pending_vote_choices']);
-
-            return redirect()->route('home')->with('submission_error', 'You have already voted for this position.');
-        }
-
         $choices = session('pending_vote_choices', []);
         if (! is_array($choices) || $choices === []) {
             return back()->with('email_error', 'Select a candidate on the ballot before submitting your vote.');
         }
 
         $positionId = (int) (session('current_position_id') ?: $position?->id);
-        $claimed = $positionId > 0 && VoterPositionBallot::query()->insertOrIgnore([
-            'position_id' => $positionId,
-            'voter_email' => $email,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]) === 1;
+        $claimed = $positionId > 0 && DB::transaction(function () use ($choices, $email, $positionId): bool {
+            if (ElectionVote::query()
+                ->where('position_id', $positionId)
+                ->where('voter_email', $email)
+                ->exists()) {
+                return false;
+            }
+
+            $claimed = VoterPositionBallot::query()->insertOrIgnore([
+                'position_id' => $positionId,
+                'voter_email' => $email,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]) === 1;
+
+            if (! $claimed) {
+                $hasRecordedVote = ElectionVote::query()
+                    ->where('position_id', $positionId)
+                    ->where('voter_email', $email)
+                    ->exists();
+
+                if ($hasRecordedVote) {
+                    return false;
+                }
+
+                // A previous interrupted submission may have left only the marker.
+                VoterPositionBallot::query()
+                    ->where('position_id', $positionId)
+                    ->where('voter_email', $email)
+                    ->delete();
+
+                $claimed = VoterPositionBallot::query()->insertOrIgnore([
+                    'position_id' => $positionId,
+                    'voter_email' => $email,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]) === 1;
+            }
+
+            if (! $claimed) {
+                return false;
+            }
+
+            $this->recordVoteChoices($choices, $email, $positionId);
+
+            if (! ElectionVote::query()
+                ->where('position_id', $positionId)
+                ->where('voter_email', $email)
+                ->exists()) {
+                VoterPositionBallot::query()
+                    ->where('position_id', $positionId)
+                    ->where('voter_email', $email)
+                    ->delete();
+
+                return false;
+            }
+
+            return true;
+        });
         if (! $claimed) {
             session()->forget(['verified_email', 'pending_vote_choices']);
 
