@@ -86,14 +86,21 @@ class HomeController extends Controller
     {
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255'],
+            'tab_id' => ['nullable', 'string', 'max:100'],
         ]);
 
         $email = strtolower(trim($validated['email']));
+        $tabId = trim((string) ($validated['tab_id'] ?? ''));
+        $claims = session('voter_access_claims', []);
+        $claims = is_array($claims) ? $claims : [];
+        $claimedTabId = isset($claims[$email]) ? (string) $claims[$email] : '';
         $claimedEmails = collect(session('voter_access_emails', []))
             ->map(fn ($claimedEmail): string => strtolower(trim((string) $claimedEmail)))
             ->filter()
             ->values();
-        if ($claimedEmails->contains($email)) {
+        $sameSessionEmail = strtolower((string) session('voter_access_email', '')) === $email;
+        $isSameTab = $claimedTabId !== '' && $tabId !== '' && hash_equals($claimedTabId, $tabId);
+        if (($claimedTabId !== '' && ! $isSameTab) || ($claimedTabId === '' && $claimedEmails->contains($email) && ! $sameSessionEmail)) {
             return back()
                 ->withInput()
                 ->with('duplicate_voter_access_email', $email)
@@ -128,8 +135,10 @@ class HomeController extends Controller
 
         session([
             'voter_access_emails' => $claimedEmails->push($email)->unique()->values()->all(),
+            'voter_access_claims' => array_merge($claims, [$email => $tabId]),
             'voter_access_email' => $email,
             'verified_email' => $email,
+            'voter_access_tab_id' => $tabId,
         ]);
         session()->forget('duplicate_voter_access_email');
 
