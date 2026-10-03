@@ -439,7 +439,7 @@ class AdminAuthController extends Controller
 
     public function toggleCandidacy(ElectionPosition $position): RedirectResponse
     {
-        if ($position->is_completed || $position->is_closed) {
+        if ($position->is_completed || ($position->is_closed && ! $position->candidacy_open)) {
             return back()->with('position_error', 'Completed or closed positions cannot accept candidacy submissions.');
         }
 
@@ -452,7 +452,7 @@ class AdminAuthController extends Controller
 
     public function toggleNomination(ElectionPosition $position): RedirectResponse
     {
-        if ($position->is_completed || $position->is_closed) {
+        if ($position->is_completed || ($position->is_closed && ! $position->nomination_open)) {
             return back()->with('position_error', 'Completed or closed positions cannot accept nominations.');
         }
 

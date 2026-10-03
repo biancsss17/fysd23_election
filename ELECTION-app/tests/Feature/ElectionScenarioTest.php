@@ -271,6 +271,28 @@ class ElectionScenarioTest extends TestCase
         $this->assertTrue($position->fresh()->nomination_open);
     }
 
+    public function test_admin_can_close_candidacy_and_nomination_after_voting_closes(): void
+    {
+        $position = $this->position('President');
+        $position->update([
+            'is_closed' => true,
+            'candidacy_open' => true,
+            'nomination_open' => true,
+        ]);
+
+        $this->withSession($this->adminSession())
+            ->patch(route('admin.position-management.candidacy', $position))
+            ->assertRedirect()
+            ->assertSessionHas('position_success', 'President candidacy is now closed.');
+        $this->assertFalse($position->fresh()->candidacy_open);
+
+        $this->withSession($this->adminSession())
+            ->patch(route('admin.position-management.nomination', $position))
+            ->assertRedirect()
+            ->assertSessionHas('position_success', 'President nominations are now closed.');
+        $this->assertFalse($position->fresh()->nomination_open);
+    }
+
     public function test_closed_unfinished_position_does_not_block_locking_the_next_position(): void
     {
         $closed = $this->position('Treasurer');
