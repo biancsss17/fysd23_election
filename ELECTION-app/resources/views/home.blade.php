@@ -128,6 +128,7 @@
     </header>
 
     <main class="mx-auto min-h-screen max-w-screen-2xl px-4 pb-24 pt-20 sm:px-6 lg:px-10">
+        @include('partials.tutorial-video', ['audience' => 'user'])
         @if (session('candidacy_error'))
             <div class="auto-dismiss-5s mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-900 shadow-sm" role="alert"><span class="material-symbols-outlined mt-0.5 text-xl">error</span><div><strong class="block text-sm">Candidacy not eligible</strong><p class="mt-0.5 text-xs leading-relaxed">{{ session('candidacy_error') }}</p></div></div>
         @endif

@@ -1,0 +1,14 @@
+.tutorial-launcher { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.tutorial-button { cursor: pointer; border: 1px solid #bfd2ef; border-radius: 8px; background: #115cb9; color: white; padding: 10px 14px; font: 600 14px/1.4 Inter, Arial, sans-serif; }
+.tutorial-button:hover { background: #0c4893; }
+.tutorial-button:focus-visible { outline: 3px solid #eec14b; outline-offset: 3px; }
+.tutorial-dialog { box-sizing: border-box; width: min(1000px, calc(100% - 24px)); max-height: calc(100dvh - 24px); margin: auto; padding: 20px; overflow: auto; border: 0; border-radius: 14px; background: #fff; color: #111c2d; font: 14px/1.5 Inter, Arial, sans-serif; }
+.tutorial-dialog::backdrop { background: rgb(7 18 34 / 80%); }
+.tutorial-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tutorial-heading h2 { margin: 0; font-size: 22px; font-weight: 700; }
+.tutorial-dialog p { margin: 12px 0; }
+.tutorial-dialog video { display: block; width: 100%; max-height: 65dvh; background: #000; }
+.tutorial-dialog a { color: #115cb9; text-decoration: underline; }
+.tutorial-note { background: #fff5e5; padding: 10px; border-radius: 6px; }
+@media (max-width: 600px) { .tutorial-dialog { padding: 12px; } .tutorial-heading h2 { font-size: 18px; } }
+@media print { .tutorial-launcher, .tutorial-dialog { display: none !important; } }
