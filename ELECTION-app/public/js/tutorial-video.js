@@ -1,25 +1,24 @@
 (() => {
-    const initializeTutorial = () => {
+    // Use delegated clicks so the launcher still works if the page shell or
+    // dialog is inserted after this script is evaluated.
+    document.addEventListener('click', event => {
+        const openButton = event.target.closest('[data-tutorial-open]');
+        if (!openButton) return;
+
         const dialog = document.getElementById('tutorial-dialog');
-        const openButton = document.querySelector('[data-tutorial-open]');
-        if (!dialog || !openButton || dialog.dataset.initialized) return;
+        const video = dialog?.querySelector('[data-tutorial-video]');
+        if (!dialog || !video) return;
 
-        dialog.dataset.initialized = 'true';
-        const video = dialog.querySelector('[data-tutorial-video]');
-        openButton.addEventListener('click', () => {
-            if (!video.getAttribute('src')) video.src = video.dataset.src;
-            dialog.showModal();
-        });
-        dialog.querySelector('[data-tutorial-close]').addEventListener('click', () => dialog.close());
-        dialog.addEventListener('close', () => {
-            video.pause();
-            openButton.focus();
-        });
-    };
+        if (!video.getAttribute('src')) video.src = video.dataset.src;
+        if (!dialog.open) dialog.showModal();
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeTutorial, { once: true });
-    } else {
-        initializeTutorial();
-    }
+        if (!dialog.dataset.closeBound) {
+            dialog.dataset.closeBound = 'true';
+            dialog.querySelector('[data-tutorial-close]')?.addEventListener('click', () => dialog.close());
+            dialog.addEventListener('close', () => {
+                video.pause();
+                openButton.focus();
+            });
+        }
+    });
 })();
