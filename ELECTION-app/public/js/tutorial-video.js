@@ -15,10 +15,6 @@
             video.pause();
             openButton.focus();
         });
-        dialog.addEventListener('click', event => {
-            const bounds = dialog.getBoundingClientRect();
-            if (event.target === dialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) dialog.close();
-        });
     };
 
     if (document.readyState === 'loading') {
