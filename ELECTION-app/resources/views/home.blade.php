@@ -128,7 +128,6 @@
     </header>
 
     <main class="mx-auto min-h-screen max-w-screen-2xl px-4 pb-24 pt-20 sm:px-6 lg:px-10">
-        @include('partials.tutorial-video', ['audience' => 'user'])
         @if (session('candidacy_error'))
             <div class="auto-dismiss-5s mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-900 shadow-sm" role="alert"><span class="material-symbols-outlined mt-0.5 text-xl">error</span><div><strong class="block text-sm">Candidacy not eligible</strong><p class="mt-0.5 text-xs leading-relaxed">{{ session('candidacy_error') }}</p></div></div>
         @endif
@@ -189,6 +188,11 @@
             @endforeach
         </div></section>
     </main>
+
+    {{-- The launcher is outside the page content so it never creates space or
+         becomes part of the voting banner's layout. Its stylesheet keeps it
+         fixed to the viewport as a floating control. --}}
+    @include('partials.tutorial-video', ['audience' => 'user'])
 
     @foreach ([['candidacy', 'File candidacy', 'Candidate full name', 'Email address', 'Submit candidacy'], ['nomination', 'Submit nomination', 'Nominee full name', 'Nominator email', 'Submit nomination']] as $modal)
         <div id="modal-{{ $modal[0] }}" class="modal fixed inset-0 z-50 hidden items-center justify-center bg-[#0b192c]/70 p-4 opacity-0 backdrop-blur-sm transition-opacity duration-200" role="dialog" aria-modal="true">
