@@ -43,10 +43,6 @@ class AdminAuthController extends Controller
         }
 
         $request->session()->regenerate();
-        config([
-            'session.lifetime' => config('session.admin_lifetime'),
-            'session.expire_on_close' => false,
-        ]);
         $request->session()->put([
             'admin_id' => $admin->id,
             'admin_name' => $admin->name,
