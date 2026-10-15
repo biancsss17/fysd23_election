@@ -147,7 +147,22 @@
         <section class="relative overflow-hidden rounded-xl bg-primary-container p-4 text-white shadow-md">
             <div class="pointer-events-none absolute -bottom-6 -right-6 flex h-32 w-32 items-center justify-center rounded-full bg-blue-400/10"><span class="material-symbols-outlined text-[96px] text-blue-300/20">how_to_vote</span></div>
             <div class="relative z-10 mb-3 flex items-center justify-between gap-2"><span class="inline-flex items-center gap-1.5 rounded-full bg-tertiary-fixed px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#251a00] shadow-sm"><span class="h-2 w-2 animate-pulse rounded-full bg-[#251a00]"></span>Current election</span><span class="text-xs font-bold uppercase tracking-wider text-tertiary-fixed-dim">2027–2030</span></div>
-            <div class="relative z-10"><h1 class="font-display text-3xl font-bold tracking-tight text-surface" id="current-position-name">{{ $allPositionsComplete ? 'Election complete' : ($position?->name ?? 'Election position') }}</h1><p class="mt-1 flex items-center gap-1 text-sm font-semibold text-tertiary-fixed" id="current-position-status"><span class="material-symbols-outlined text-lg">{{ $allPositionsComplete ? 'verified' : 'lock_open' }}</span>{{ $allPositionsComplete ? 'All ballot positions completed' : 'Candidacy & nomination open' }}</p></div>
+            @php
+                $overviewStatus = $allPositionsComplete
+                    ? ['icon' => 'verified', 'label' => 'All ballot positions completed']
+                    : (! $position
+                        ? ['icon' => 'lock', 'label' => 'No election position available']
+                        : ($position->is_unlocked
+                            ? ['icon' => 'how_to_vote', 'label' => 'Voting open']
+                            : (($position->candidacy_open && $position->nomination_open)
+                                ? ['icon' => 'lock_open', 'label' => 'Candidacy & nomination open']
+                                : ($position->candidacy_open
+                                    ? ['icon' => 'edit_document', 'label' => 'Candidacy open']
+                                    : ($position->nomination_open
+                                        ? ['icon' => 'recommend', 'label' => 'Nomination open']
+                                        : ['icon' => 'lock', 'label' => 'Waiting for administrator to start'])))))
+            @endphp
+            <div class="relative z-10"><h1 class="font-display text-3xl font-bold tracking-tight text-surface" id="current-position-name">{{ $allPositionsComplete ? 'Election complete' : ($position?->name ?? 'No election position') }}</h1><p class="mt-1 flex items-center gap-1 text-sm font-semibold text-tertiary-fixed" id="current-position-status"><span class="material-symbols-outlined text-lg">{{ $overviewStatus['icon'] }}</span>{{ $overviewStatus['label'] }}</p></div>
             <div class="-mx-4 -mb-4 mt-4 flex items-center justify-between gap-2 bg-black/20 px-4 py-2 text-xs"><span class="flex items-center gap-2 text-slate-200"><span class="material-symbols-outlined text-lg text-tertiary-fixed">verified</span>District 23 FYS official protocol</span><span class="font-bold text-tertiary-fixed">CYCLE ACTIVE</span></div>
         </section>
 

@@ -447,15 +447,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const overviewStatus = document.getElementById('current-position-status');
             if (noPositions) {
                 window.electionPosition = null;
-                if (overviewName) overviewName.textContent = 'Election position';
-                if (overviewStatus) overviewStatus.innerHTML = '<span class="material-symbols-outlined text-lg">lock_open</span>Election controls locked';
+                if (overviewName) overviewName.textContent = 'No election position';
+                if (overviewStatus) overviewStatus.innerHTML = '<span class="material-symbols-outlined text-lg">lock</span>No election position available';
             } else if (allPositionsComplete) {
                 if (overviewName) overviewName.textContent = 'Election complete';
                 if (overviewStatus) overviewStatus.innerHTML = '<span class="material-symbols-outlined text-lg">verified</span>All ballot positions completed';
             } else if (position) {
                 window.electionPosition = position;
                 if (overviewName) overviewName.textContent = position.name;
-                if (overviewStatus) overviewStatus.innerHTML = `<span class="material-symbols-outlined text-lg">${position.is_closed ? 'event_busy' : (position.is_unlocked ? 'how_to_vote' : 'lock_open')}</span>${position.is_closed ? 'Voting closed' : (position.is_unlocked ? 'Voting open' : 'Waiting for administrator to start')}`;
+                const stageLabel = position.is_closed
+                    ? 'Voting closed'
+                    : (position.is_unlocked
+                        ? 'Voting open'
+                        : (position.candidacy_open && position.nomination_open
+                            ? 'Candidacy & nomination open'
+                            : (position.candidacy_open ? 'Candidacy open' : (position.nomination_open ? 'Nomination open' : 'Waiting for administrator to start'))));
+                const stageIcon = position.is_closed ? 'event_busy' : (position.is_unlocked ? 'how_to_vote' : (position.candidacy_open || position.nomination_open ? 'lock_open' : 'lock'));
+                if (overviewStatus) overviewStatus.innerHTML = `<span class="material-symbols-outlined text-lg">${stageIcon}</span>${stageLabel}`;
             }
 
             timeline.querySelectorAll('.timeline-step').forEach((step) => {

@@ -73,7 +73,9 @@ class ElectionScenarioTest extends TestCase
     {
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('Election position');
+            ->assertSee('No election position')
+            ->assertSee('No election position available')
+            ->assertDontSee('Candidacy &amp; nomination open');
         $this->get(route('voter-access'))->assertOk();
         $this->get(route('ballot'))
             ->assertOk()
