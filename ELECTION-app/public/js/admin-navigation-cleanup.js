@@ -1,5 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const logoutForm = document.querySelector('form[action$="/admin/logout"]');
+
+    // The logout form needs its own handler. If the generic handler marks it as
+    // submitting first, a second handler can mistake the first submit for a
+    // duplicate and cancel the actual POST, leaving the button stuck on
+    // "Processing…".
     document.querySelectorAll('form').forEach((form) => {
+        if (form === logoutForm) return;
+
         form.addEventListener('submit', (event) => {
             form.dataset.submitting = 'true';
             const submitter = event.submitter || form.querySelector('button[type="submit"]');
@@ -10,6 +18,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    if (logoutForm) {
+        logoutForm.addEventListener('submit', (event) => {
+            if (logoutForm.dataset.submitting === 'true') {
+                event.preventDefault();
+                return;
+            }
+
+            logoutForm.dataset.submitting = 'true';
+            window.adminLogoutInProgress = true;
+            const submitter = event.submitter || logoutForm.querySelector('button[type="submit"]');
+            if (submitter) {
+                submitter.disabled = true;
+                submitter.textContent = 'Signing out…';
+            }
+            // Leave the first submit's default action intact so the browser
+            // sends the POST to the server immediately.
+        });
+    }
 
     document.querySelectorAll('a[data-path="login"]').forEach((link) => {
         link.addEventListener('click', (event) => {
@@ -48,7 +75,7 @@ window.refreshLivePage = window.refreshLivePage || (() => {
     };
 
     return async () => {
-        if (refreshing || document.hidden || document.body.classList.contains('position-management-page') || window.isEditingWinner || document.activeElement?.isContentEditable || document.querySelector('form[data-submitting="true"]')) return;
+        if (refreshing || window.adminLogoutInProgress || document.hidden || document.body.classList.contains('position-management-page') || window.isEditingWinner || document.activeElement?.isContentEditable || document.querySelector('form[data-submitting="true"]')) return;
         refreshing = true;
 
         try {

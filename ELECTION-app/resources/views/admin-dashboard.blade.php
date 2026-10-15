@@ -171,7 +171,7 @@
         abstainRow.innerHTML = '<span class="font-semibold">ABSTAIN</span><span class="font-bold text-secondary">' + count + '</span>';
     };
     window.updateDashboardResult();
-    setInterval(() => { const active = document.activeElement; const editing = active && ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName); const modalOpen = document.querySelector('.fixed.inset-0.flex, dialog[open]'); if (!document.hidden && !editing && !modalOpen) window.refreshLivePage?.(); }, 1000);
+    setInterval(() => { const active = document.activeElement; const editing = active && ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName); const modalOpen = document.querySelector('.fixed.inset-0.flex, dialog[open]'); if (!document.hidden && !editing && !modalOpen) window.refreshLivePage?.(); }, 5000);
 </script>
 </body>
 </html>

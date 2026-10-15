@@ -192,7 +192,7 @@
         if (!document.hidden && !editing && !modalOpen && !positionFormEditing) {
             window.refreshLivePage?.();
         }
-    }, 1000);
+    }, 5000);
 </script>
 <script src="{{ asset('js/admin-position-swap.js') }}?v={{ filemtime(public_path('js/admin-position-swap.js')) }}"></script>
 </body>

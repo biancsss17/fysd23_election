@@ -48,6 +48,27 @@ class AdminAuthenticationTest extends TestCase
             ->assertSee('District 23 FYS Election Overview');
     }
 
+    public function test_admin_can_sign_out_explicitly(): void
+    {
+        $admin = AdminUser::create([
+            'name' => 'Election Administrator',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('secret-password'),
+            'is_active' => true,
+        ]);
+
+        $this->withSession([
+            'admin_id' => $admin->id,
+            'admin_name' => $admin->name,
+            'admin_email' => $admin->email,
+        ])->post(route('admin.logout'))
+            ->assertRedirect(route('splash'))
+            ->assertSessionMissing('admin_id');
+
+        $this->get(route('admin.dashboard'))
+            ->assertRedirect(route('admin.login'));
+    }
+
     public function test_position_configuration_is_normalized_to_the_selected_rule(): void
     {
         $admin = AdminUser::create([
