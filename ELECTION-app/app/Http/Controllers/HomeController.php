@@ -11,8 +11,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class HomeController extends Controller
 {
@@ -149,6 +149,7 @@ class HomeController extends Controller
         $remainingSeconds = $position?->is_unlocked && $position->unlocked_at
             ? min(self::BALLOT_WINDOW_SECONDS, max(0, (int) floor(self::BALLOT_WINDOW_SECONDS - $position->unlocked_at->diffInSeconds(now()))))
             : 0;
+
         return view('ballot', [
             'position' => $position,
             'candidateSubmissions' => CandidateSubmission::query()->where('status', '!=', 'Rejected')->where('position_id', $position?->id)->orderBy('id')->get(),
@@ -578,7 +579,6 @@ class HomeController extends Controller
 
             return redirect()->route('home')->with('submission_error', 'You have already voted for this position.');
         }
-        $this->recordVoteChoices($choices, $email, $positionId > 0 ? $positionId : null);
         $receiptPosition = $positionId > 0 ? ElectionPosition::query()->find($positionId) : null;
         $candidateChoices = collect($choices)
             ->filter(fn (string $choice): bool => str_starts_with($choice, 'candidate-'))

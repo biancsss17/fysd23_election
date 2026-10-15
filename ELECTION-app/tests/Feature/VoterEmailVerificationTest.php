@@ -2,9 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\RegisteredVoter;
+use App\Models\CandidateSubmission;
 use App\Models\ElectionPosition;
 use App\Models\ElectionVote;
+use App\Models\RegisteredVoter;
 use App\Models\VoterPositionBallot;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -12,6 +13,35 @@ use Tests\TestCase;
 class VoterEmailVerificationTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_candidate_choices_are_saved_once_even_when_submission_is_retried(): void
+    {
+        foreach ([1, 2] as $seats) {
+            $position = ElectionPosition::create([
+                'name' => 'Officer '.$seats, 'seats' => $seats, 'rule' => 'single',
+                'allow_abstain' => true, 'max_selections' => $seats, 'is_unlocked' => true,
+            ]);
+            $email = 'voter'.$seats.'@example.com';
+            RegisteredVoter::create(['email' => $email, 'is_active' => true]);
+            $choices = [];
+            for ($i = 0; $i < $seats; $i++) {
+                $candidate = CandidateSubmission::create([
+                    'position_id' => $position->id, 'candidate_name' => 'Candidate '.$i,
+                    'submitted_by_email' => $email, 'submission_type' => 'Self-Declaration',
+                    'status' => 'Pending',
+                ]);
+                $choices[] = 'candidate-'.$candidate->id;
+            }
+            $session = ['current_position_id' => $position->id, 'verified_email' => $email, 'pending_vote_choices' => $choices];
+            $this->withSession($session)->post(route('review-vote.submit'), ['choices' => $choices])
+                ->assertRedirect(route('vote-countdown'));
+            $this->assertSame($seats, ElectionVote::where('position_id', $position->id)->count());
+            $this->withSession($session)->post(route('review-vote.submit'), ['choices' => $choices])
+                ->assertRedirect(route('home'));
+            $this->assertSame($seats, ElectionVote::where('position_id', $position->id)->count());
+            $this->assertSame(1, VoterPositionBallot::where('position_id', $position->id)->count());
+        }
+    }
 
     public function test_unregistered_email_is_rejected(): void
     {

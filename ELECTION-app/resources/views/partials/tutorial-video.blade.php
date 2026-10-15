@@ -7,11 +7,11 @@
         <button class="tutorial-button" type="button" data-tutorial-close aria-label="Close tutorial">Close ×</button>
     </div>
     <p>Recorded demonstration with sample data and step-by-step text. No narration.</p>
-    <video controls playsinline preload="none" data-tutorial-video data-src="{{ asset('videos/'.$audience.'-tutorial.mp4') }}">
+    <video controls playsinline preload="none" data-tutorial-video data-src="{{ asset('videos/'.$audience.'-tutorial.mp4') }}?v={{ filemtime(public_path('videos/'.$audience.'-tutorial.mp4')) }}">
         Your browser does not support video playback.
     </video>
-    <p class="tutorial-note">The recorded results include a flagged duplicate-count issue; they are demonstration data, not live election results.</p>
-    <p><a href="{{ asset('videos/'.$audience.'-tutorial.mp4') }}" target="_blank" rel="noopener">Open video directly</a></p>
+    <p class="tutorial-note">This guide uses sample data, not live election results.</p>
+    <p><a href="{{ asset('videos/'.$audience.'-tutorial.mp4') }}?v={{ filemtime(public_path('videos/'.$audience.'-tutorial.mp4')) }}" target="_blank" rel="noopener">Open video directly</a></p>
 </dialog>
 <link rel="stylesheet" href="{{ asset('css/tutorial-video.css') }}?v={{ filemtime(public_path('css/tutorial-video.css')) }}">
 <script src="{{ asset('js/tutorial-video.js') }}?v={{ filemtime(public_path('js/tutorial-video.js')) }}" defer></script>
