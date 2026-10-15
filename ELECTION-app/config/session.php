@@ -32,7 +32,6 @@ return [
     |
     */
 
-    // Sessions do not expire because of an application logout timer.
     'lifetime' => 5256000,
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
